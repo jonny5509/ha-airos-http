@@ -69,10 +69,7 @@ def _normalise(data):
         "frequency": ("frequency", "wlan_frequency", "freq"),
         "wlanMac": ("wlanmac", "wlan_mac", "wireless_mac", "wmac"),
         "mac": ("mac", "devicemac", "device_mac", "lmac"),
-        "hostname": ("hostname", "host_name", "devicename"),
         "ip_address": ("ip_address", "deviceip", "ipaddr", "lan_ip", "lip"),
-        "firmwareVersion": ("firmwareversion", "firmware_version", "version"),
-        "platform": ("platform", "board", "boardname", "board_name"),
         "uptime_seconds": ("uptime_seconds", "uptime", "system_uptime"),
     }
     lookup = {re.sub(r"[^a-z0-9]", "", str(k).lower()): v for k, v in data.items()}
@@ -99,21 +96,6 @@ def _normalise(data):
         result["ccq"] = float(result["ccq"]) / 10
     if "signal" in result and "noise" in result:
         result["snr"] = float(result["signal"]) - float(result["noise"])
-    result.setdefault("device_model", "NanoStation5")
-    result["firmware_upgrade_latest_version"] = "4.0.4.5074"
-    result["firmware_upgrade_source"] = "https://ui.com/download/airmax-legacy"
-    version = str(result.get("firmwareVersion", ""))
-    match = re.search(r"v?(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?", version, re.I)
-    if match and result.get("device_model") == "NanoStation5":
-        installed = tuple(int(part or 0) for part in match.groups())
-        latest = (4, 0, 4, 5074)
-        result["firmware_upgrade"] = (
-            "Update available" if installed < latest else
-            "Up to date" if installed == latest else "Unknown"
-        )
-        result["firmware_upgrade_installed_version"] = version
-    else:
-        result["firmware_upgrade"] = "Unknown"
     return result
 
 
