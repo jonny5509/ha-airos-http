@@ -5,6 +5,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import PERCENTAGE, UnitOfDataRate, UnitOfInformation, UnitOfTime
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -130,6 +131,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             identifiers = {(DOMAIN, host)}
             via_device = None
 
+        self._target_device_identifiers = identifiers
         self._attr_device_info = DeviceInfo(
             identifiers=identifiers,
             via_device=via_device,
@@ -138,6 +140,19 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             name=device_name,
             configuration_url=coordinator.host.rstrip("/"),
         )
+
+    async def async_added_to_hass(self):
+        """Move existing registry entries to the correct split device."""
+        await super().async_added_to_hass()
+        device = dr.async_get(self.hass).async_get_device(
+            self._target_device_identifiers
+        )
+        if device is None:
+            return
+        registry = er.async_get(self.hass)
+        entity = registry.async_get(self.entity_id)
+        if entity is not None and entity.device_id != device.id:
+            registry.async_update_entity(self.entity_id, device_id=device.id)
 
     @property
     def native_value(self):
