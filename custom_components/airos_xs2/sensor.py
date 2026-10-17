@@ -138,13 +138,13 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             device_id = f"{host}_ethernet"
             device_name = f"{entry.data['name']} Ethernet"
             identifiers = {(DOMAIN, device_id)}
-            via_device = (DOMAIN, host)
+            via_device = True
         elif key in {"wlanMac", "wlan_ip_address"}:
             # wmac and wip are wireless-interface identifiers.
             device_id = f"{host}_wireless"
             device_name = f"{entry.data['name']} Wireless"
             identifiers = {(DOMAIN, device_id)}
-            via_device = (DOMAIN, host)
+            via_device = True
         else:
             device_name = entry.data["name"]
             identifiers = {(DOMAIN, host)}
