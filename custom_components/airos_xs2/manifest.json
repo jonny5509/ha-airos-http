@@ -1,0 +1,11 @@
+{
+  "domain": "airos_xs2",
+  "name": "Ubiquiti AirOS (HTTP)",
+  "version": "2.0.0",
+  "documentation": "https://github.com/jonny5509/http-AirOS",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": [],
+  "config_flow": true,
+  "iot_class": "local_polling"
+}
