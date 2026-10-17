@@ -25,6 +25,7 @@ SENSORS = {
     "essid": ("Wireless Network Name", None, None, None),
     "frequency": ("Wireless Frequency", "MHz", None, None),
     "wlanMac": ("Wireless MAC Address", None, None, None),
+    "wip": ("Wireless IP Address", None, None, None),
     "mac": ("Device MAC Address", None, None, None),
     "ip_address": ("Device IP Address", None, None, None),
     "hostname": ("Hostname", None, None, None),
@@ -127,7 +128,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             device_name = f"{entry.data['name']} Ethernet"
             identifiers = {(DOMAIN, device_id)}
             via_device = (DOMAIN, host)
-        elif key in {"wlanMac", "wlan_ip_address"}:
+        elif key in {"wlanMac", "wlan_ip_address", "wip"}:
             # wmac and wip are wireless-interface identifiers.
             device_id = f"{host}_wireless"
             device_name = f"{entry.data['name']} Wireless"
