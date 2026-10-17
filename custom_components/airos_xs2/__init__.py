@@ -8,6 +8,15 @@ PLATFORMS = ["sensor", "button"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    # Older setups used the generic "AirOS" label. Upgrade that default to the
+    # actual hardware model without overriding a name the user chose themselves.
+    current_name = entry.data.get("name", "").strip()
+    if current_name.lower() in {"airos", "air os", "ubiquiti airos", "ubiquiti airos (http)"}:
+        updated_data = {**entry.data, "name": "NanoStation5"}
+        hass.config_entries.async_update_entry(
+            entry, data=updated_data, title="NanoStation5"
+        )
+
     coordinator = AiRXS2Coordinator(
         hass, entry.data["host"], entry.data["username"],
         entry.data["password"], entry.data["name"],
