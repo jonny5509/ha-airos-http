@@ -116,25 +116,27 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
             return body
 
     async def _login(self):
-        # Legacy airOS CGI login uses a cookie-backed multipart form.
-        # The requested URI is supplied both in the URL and in the form; some
-        # older builds otherwise return the login page even after a valid POST.
-        await self._request("login.cgi?uri=/status.cgi")
+        # airOS 4.x uses a multipart login form. The legacy form also submits
+        # language/country fields; omitting them can cause older builds to
+        # return the login page again even when the credentials are valid.
+        await self._request("")
         form = aiohttp.FormData()
+        form.add_field("uri", "/")
         form.add_field("username", self.username)
         form.add_field("password", self.password)
-        form.add_field("uri", "/status.cgi")
-        form.add_field("press", "Login")
+        form.add_field("country", "56")
+        form.add_field("ui_language", "en_US")
+        form.add_field("lang_changed", "no")
         body = await self._request(
-            "login.cgi?uri=/status.cgi",
+            "login.cgi",
             method="POST",
             data=form,
-            headers={"Expect": "", "Referer": urljoin(self.host, "login.cgi?uri=/status.cgi")},
+            headers={"Expect": "", "Referer": urljoin(self.host, "")},
         )
         if "invalid credentials" in body.lower() or "login failed" in body.lower():
             raise UpdateFailed(
-                "airOS returned an invalid-credentials message from login.cgi. "
-                "Verify the same username/password work in the radio's HTTP web interface."
+                "airOS login.cgi still returned a login failure page. "
+                "The integration needs the exact form fields used by this device's login page."
             )
 
     async def _async_update_data(self):
