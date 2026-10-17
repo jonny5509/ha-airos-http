@@ -118,10 +118,16 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
     async def _login(self):
         # airOS 4.x uses the legacy CGI form login and a session cookie.
         await self._request("login.cgi")
+        # Legacy airOS login.cgi expects multipart/form-data (the same format
+        # used by the device's browser form), not application/x-www-form-urlencoded.
+        form = aiohttp.FormData()
+        form.add_field("username", self.username)
+        form.add_field("password", self.password)
+        form.add_field("uri", "status.cgi")
         body = await self._request(
             "login.cgi",
             method="POST",
-            data={"username": self.username, "password": self.password, "uri": "status.cgi"},
+            data=form,
             headers={"Expect": ""},
         )
         if "invalid credentials" in body.lower() or "login failed" in body.lower():
