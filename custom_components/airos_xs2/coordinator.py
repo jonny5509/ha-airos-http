@@ -27,21 +27,49 @@ def _flatten(value, output, prefix=""):
         output[prefix] = value
 
 
+def _parse_status(body):
+    """Parse JSON or the JavaScript assignments returned by airOS 4."""
+    try:
+        return json.loads(body)
+    except json.JSONDecodeError:
+        pass
+
+    assignments = {}
+    pattern = re.compile(
+        r"""^\s*([A-Za-z_]\w*)\s*=\s*(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)'|(-?\d+(?:\.\d+)?)|(true|false))\s*;""",
+        re.IGNORECASE | re.MULTILINE,
+    )
+    for match in pattern.finditer(body):
+        key, double_quoted, single_quoted, number, boolean = match.groups()
+        if double_quoted is not None:
+            value = double_quoted
+        elif single_quoted is not None:
+            value = single_quoted
+        elif number is not None:
+            value = float(number) if "." in number else int(number)
+        else:
+            value = boolean.lower() == "true"
+        assignments[key] = value
+    if not assignments:
+        raise UpdateFailed("status.cgi did not contain recognised airOS status values.")
+    return assignments
+
+
 def _normalise(data):
     """Map common airOS status key spellings to the integration's sensor keys."""
     aliases = {
         "signal": ("signal", "wlan_signal", "wireless_signal", "signal_strength"),
-        "noise": ("noise", "wlan_noise", "wireless_noise"),
+        "noise": ("noise", "noisef", "wlan_noise", "wireless_noise"),
         "ccq": ("ccq", "wlan_ccq", "tx_ccq"),
         "snr": ("snr", "wlan_snr"),
         "wlanTxRate": ("wlantxrate", "wlan_tx_rate", "tx_rate"),
         "wlanRxRate": ("wlanrxrate", "wlan_rx_rate", "rx_rate"),
         "essid": ("essid", "ssid", "wlan_essid"),
         "frequency": ("frequency", "wlan_frequency", "freq"),
-        "wlanMac": ("wlanmac", "wlan_mac", "wireless_mac"),
-        "mac": ("mac", "devicemac", "device_mac"),
+        "wlanMac": ("wlanmac", "wlan_mac", "wireless_mac", "wmac"),
+        "mac": ("mac", "devicemac", "device_mac", "lmac"),
         "hostname": ("hostname", "host_name", "devicename"),
-        "ip_address": ("ip_address", "deviceip", "ipaddr", "lan_ip"),
+        "ip_address": ("ip_address", "deviceip", "ipaddr", "lan_ip", "lip"),
         "firmwareVersion": ("firmwareversion", "firmware_version", "version"),
         "platform": ("platform", "board", "boardname", "board_name"),
         "uptime_seconds": ("uptime_seconds", "uptime", "system_uptime"),
@@ -57,10 +85,12 @@ def _normalise(data):
 
     def number(key):
         try:
-            return float(result[key])
+            match = re.match(r"^\s*(-?\d+(?:\.\d+)?)", str(result[key]))
+            if not match:
+                raise ValueError
+            result[key] = float(match.group(1))
         except (KeyError, TypeError, ValueError):
             result.pop(key, None)
-            return None
 
     for key in ("signal", "noise", "wlanTxRate", "wlanRxRate", "frequency", "ccq"):
         number(key)
@@ -165,19 +195,7 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
         try:
             await self._login()
             body = await self._request("status.cgi")
-            try:
-                parsed = json.loads(body)
-            except json.JSONDecodeError:
-                # Some builds return the status JSON inside a script/HTML wrapper.
-                match = re.search(r"(\{.*\}|\[.*\])", body, re.S)
-                if not match:
-                    raise UpdateFailed(
-                        "status.cgi did not return JSON. Check that HTTP access is enabled and the device firmware exposes status.cgi."
-                    )
-                try:
-                    parsed = json.loads(match.group(1))
-                except json.JSONDecodeError as err:
-                    raise UpdateFailed("Could not parse airOS status.cgi response") from err
+            parsed = _parse_status(body)
             flattened = {}
             _flatten(parsed, flattened)
             # Keep a raw snapshot for troubleshooting without logging credentials.
