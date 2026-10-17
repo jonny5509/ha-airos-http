@@ -196,7 +196,29 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
             parsed = _parse_status(body)
             flattened = {}
             _flatten(parsed, flattened)
-            return _normalise(flattened)
+            result = _normalise(flattened)
+
+            # airOS 4 exposes the configured hostname on system.cgi, not status.cgi.
+            try:
+                system_page = await self._request("system.cgi")
+                hostname_input = re.search(
+                    r"""<input\\b(?=[^>]*\\b(?:name|id)\\s*=\\s*["']hostname["'])[^>]*>""",
+                    system_page,
+                    re.IGNORECASE,
+                )
+                if hostname_input:
+                    hostname_value = re.search(
+                        r"""\\bvalue\\s*=\\s*["']([^"']*)["']""",
+                        hostname_input.group(0),
+                        re.IGNORECASE,
+                    )
+                    if hostname_value and hostname_value.group(1).strip():
+                        result["hostname"] = hostname_value.group(1).strip()
+            except (aiohttp.ClientError, TimeoutError, UpdateFailed):
+                # Status sensors remain available if the optional settings page fails.
+                pass
+
+            return result
         except UpdateFailed:
             raise
         except (aiohttp.ClientError, TimeoutError) as err:
