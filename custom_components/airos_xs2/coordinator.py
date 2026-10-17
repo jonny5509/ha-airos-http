@@ -88,7 +88,7 @@ def _normalise(data):
 
 class AiRXS2Coordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, host, username, password, name):
-        self.host = host.rstrip("/") + "/"
+        self.host = "http://" + host.removeprefix("https://").removeprefix("http://").strip("/").rstrip("/") + "/"
         self.username = username
         self.password = password
         self.device_name = name
