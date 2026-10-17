@@ -116,27 +116,30 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
             return body
 
     async def _login(self):
-        # airOS 4.x uses a multipart login form. The legacy form also submits
-        # language/country fields; omitting them can cause older builds to
-        # return the login page again even when the credentials are valid.
-        await self._request("")
+        # Legacy airOS CGI login: first establish the cookie with a plain GET,
+        # then submit the minimal multipart form documented for airOS 4/5.
+        # In particular, use uri="status.cgi" (without a leading slash) and
+        # do not add modern UI fields that this firmware may not recognise.
+        await self._request("login.cgi")
         form = aiohttp.FormData()
-        form.add_field("uri", "/")
+        form.add_field("uri", "status.cgi")
         form.add_field("username", self.username)
         form.add_field("password", self.password)
-        form.add_field("country", "56")
-        form.add_field("ui_language", "en_US")
-        form.add_field("lang_changed", "no")
         body = await self._request(
             "login.cgi",
             method="POST",
             data=form,
-            headers={"Expect": "", "Referer": urljoin(self.host, "")},
+            headers={
+                "Expect": "",
+                "Referer": urljoin(self.host, "login.cgi"),
+            },
         )
-        if "invalid credentials" in body.lower() or "login failed" in body.lower():
+        lowered = body.lower()
+        if "invalid credentials" in lowered or "login failed" in lowered:
             raise UpdateFailed(
-                "airOS login.cgi still returned a login failure page. "
-                "The integration needs the exact form fields used by this device's login page."
+                "airOS login.cgi rejected the login POST. Check the radio's "
+                "HTTP login page and its exact form submission; credentials "
+                "are not logged by this integration."
             )
 
     async def _async_update_data(self):
