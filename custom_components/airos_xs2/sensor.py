@@ -26,6 +26,7 @@ SENSORS = {
     "wlanMac": ("Wireless MAC Address", None, None, None),
     "mac": ("Device MAC Address", None, None, None),
     "ip_address": ("Device IP Address", None, None, None),
+    "hostname": ("Hostname", None, None, None),
     "uptime_seconds": ("Uptime", UnitOfTime.SECONDS, SensorDeviceClass.DURATION, SensorStateClass.TOTAL_INCREASING),
     "apmac": ("Access Point MAC Address", None, None, None),
     "channel": ("Wireless Channel", None, None, None),
