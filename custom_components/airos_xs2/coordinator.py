@@ -2,6 +2,7 @@
 import json
 import logging
 import re
+import secrets
 from datetime import timedelta
 from urllib.parse import urljoin
 
@@ -139,28 +140,47 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
 
     async def _request(self, path, **kwargs):
         url = urljoin(self.host, path.lstrip("/"))
-        async with self.session.request(kwargs.pop("method", "GET"), url, **kwargs) as response:
+        async with self.session.request(self.session_method(kwargs), url, **kwargs) as response:
             body = await response.text()
             if response.status >= 400:
                 raise UpdateFailed(f"airOS HTTP {response.status} from {path}")
             return body
 
+    @staticmethod
+    def session_method(kwargs):
+        """Pop an optional HTTP method, defaulting to GET."""
+        return kwargs.pop("method", "GET")
+
     async def _login(self):
-        # airOS 4.0.4's actual login form submits an empty hidden "uri" field.
-        # A successful login responds with HTTP 302 Location: /index.cgi.
+        """Log in using the exact minimal multipart shape expected by old airOS CGI."""
         await self._request("login.cgi")
-        # The device form explicitly declares enctype="multipart/form-data".
-        # Force multipart even though every field is a plain string.
-        form = aiohttp.FormData(default_to_multipart=True)
-        form.add_field("uri", "")
-        form.add_field("username", self.username)
-        form.add_field("password", self.password)
+
+        # libcurl's -F fields used by the working device test have no per-part
+        # Content-Type headers. Build that same simple multipart form explicitly:
+        # some old airOS CGI builds fail to parse aiohttp's extra part headers.
+        boundary = "------------------------" + secrets.token_hex(12)
+        fields = (
+            ("uri", ""),
+            ("username", self.username),
+            ("password", self.password),
+        )
+        chunks = []
+        for name, value in fields:
+            chunks.append(
+                f"--{boundary}\r\n"
+                f'Content-Disposition: form-data; name="{name}"\r\n'
+                "\r\n"
+                f"{value}\r\n"
+            )
+        chunks.append(f"--{boundary}--\r\n")
+        payload = "".join(chunks).encode("utf-8")
 
         async with self.session.post(
             urljoin(self.host, "login.cgi"),
-            data=form,
+            data=payload,
             headers={
-                "Expect": "",
+                "Content-Type": f"multipart/form-data; boundary={boundary}",
+                "Content-Length": str(len(payload)),
                 "Referer": urljoin(self.host, "login.cgi"),
             },
             allow_redirects=False,
@@ -169,24 +189,16 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
             status = response.status
             location = response.headers.get("Location", "")
 
-        # Do not follow this redirect automatically: on this firmware it is
-        # the clearest signal that login succeeded, and following it obscures
-        # the login response and can make the main page look like a login error.
         if status in (301, 302, 303, 307, 308) and "index.cgi" in location.lower():
             return
 
         lowered = body.lower()
-        if (
-            "invalid credentials" in lowered
-            or "login failed" in lowered
-            or 'id="loginform"' in lowered
-        ):
+        if "invalid credentials" in lowered or "login failed" in lowered or 'id="loginform"' in lowered:
             raise UpdateFailed(
                 f"airOS login.cgi returned the login page (HTTP {status}, "
-                f"Location: {location or 'none'}). The radio did not redirect "
-                "to /index.cgi after login. Confirm Home Assistant is running "
-                "the latest integration code and that the configured credentials "
-                "match the working browser/curl login. Passwords are not logged."
+                f"Location: {location or 'none'}). Login was not accepted; "
+                "verify the integration files were updated and restart Home Assistant. "
+                "Passwords and session cookies are never logged."
             )
         if status >= 400:
             raise UpdateFailed(f"airOS HTTP {status} from login.cgi")
@@ -202,10 +214,7 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
             parsed = _parse_status(body)
             flattened = {}
             _flatten(parsed, flattened)
-            # Keep a raw snapshot for troubleshooting without logging credentials.
-            data = _normalise(flattened)
-            data.setdefault("device_model", "NanoStation5")
-            return data
+            return _normalise(flattened)
         except UpdateFailed:
             raise
         except (aiohttp.ClientError, TimeoutError) as err:
