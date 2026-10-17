@@ -202,13 +202,13 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
             try:
                 system_page = await self._request("system.cgi")
                 hostname_input = re.search(
-                    r"""<input\\b(?=[^>]*\\b(?:name|id)\\s*=\\s*["']hostname["'])[^>]*>""",
+                    r"""<input\b(?=[^>]*\b(?:name|id)\s*=\s*["']hostname["'])[^>]*>""",
                     system_page,
                     re.IGNORECASE,
                 )
                 if hostname_input:
                     hostname_value = re.search(
-                        r"""\\bvalue\\s*=\\s*["']([^"']*)["']""",
+                        r"""\bvalue\s*=\s*["']([^"']*)["']""",
                         hostname_input.group(0),
                         re.IGNORECASE,
                     )
