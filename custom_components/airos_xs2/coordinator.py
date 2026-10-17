@@ -116,31 +116,50 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
             return body
 
     async def _login(self):
-        # Legacy airOS CGI login: first establish the cookie with a plain GET,
-        # then submit the minimal multipart form documented for airOS 4/5.
-        # In particular, use uri="status.cgi" (without a leading slash) and
-        # do not add modern UI fields that this firmware may not recognise.
+        # airOS 4.0.4's actual login form submits an empty hidden "uri" field.
+        # A successful login responds with HTTP 302 Location: /index.cgi.
         await self._request("login.cgi")
         form = aiohttp.FormData()
-        form.add_field("uri", "status.cgi")
+        form.add_field("uri", "")
         form.add_field("username", self.username)
         form.add_field("password", self.password)
-        body = await self._request(
-            "login.cgi",
-            method="POST",
+
+        async with self.session.post(
+            urljoin(self.host, "login.cgi"),
             data=form,
             headers={
                 "Expect": "",
                 "Referer": urljoin(self.host, "login.cgi"),
             },
-        )
+            allow_redirects=False,
+        ) as response:
+            body = await response.text()
+            status = response.status
+            location = response.headers.get("Location", "")
+
+        # Do not follow this redirect automatically: on this firmware it is
+        # the clearest signal that login succeeded, and following it obscures
+        # the login response and can make the main page look like a login error.
+        if status in (301, 302, 303, 307, 308) and "index.cgi" in location.lower():
+            return
+
         lowered = body.lower()
-        if "invalid credentials" in lowered or "login failed" in lowered:
+        if (
+            "invalid credentials" in lowered
+            or "login failed" in lowered
+            or 'id="loginform"' in lowered
+        ):
             raise UpdateFailed(
-                "airOS login.cgi rejected the login POST. Check the radio's "
-                "HTTP login page and its exact form submission; credentials "
-                "are not logged by this integration."
+                "airOS login.cgi returned the login page instead of the "
+                "expected redirect to /index.cgi. Check the configured "
+                "credentials; the integration does not log them."
             )
+        if status >= 400:
+            raise UpdateFailed(f"airOS HTTP {status} from login.cgi")
+        raise UpdateFailed(
+            f"Unexpected airOS login response (HTTP {status}, "
+            f"Location: {location or 'none'})."
+        )
 
     async def _async_update_data(self):
         try:
