@@ -189,6 +189,17 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
             f"Location: {location or 'none'})."
         )
 
+    async def async_reboot(self):
+        """Request a normal reboot over HTTP; never call the factory-reset endpoint."""
+        await self._login()
+        try:
+            # The System page's Reboot... control opens reboot.cgi with GET.
+            # reset.cgi is deliberately never requested by this integration.
+            await self._request("reboot.cgi")
+        except (aiohttp.ClientError, TimeoutError) as err:
+            # Some firmware closes the connection as the device restarts.
+            _LOGGER.debug("Connection ended while requesting airOS reboot: %s", err)
+
     async def _async_update_data(self):
         try:
             await self._login()
