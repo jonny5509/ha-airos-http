@@ -77,6 +77,17 @@ async def async_setup_entry(hass, entry, async_add_entities):
     data = coordinator.data or {}
     entities = []
 
+    # Ensure the parent radio device exists before creating interface devices.
+    device_registry = dr.async_get(hass)
+    device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.data["host"])},
+        manufacturer="Ubiquiti",
+        model="NanoStation5 / airOS 4.x",
+        name=entry.data["name"],
+        configuration_url=coordinator.host.rstrip("/"),
+    )
+
     # First add known sensors with units and device classes.
     for key, description in SENSORS.items():
         if key in data and data[key] is not None:
@@ -121,7 +132,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             device_id = f"{host}_wireless"
             device_name = f"{entry.data['name']} Wireless"
             identifiers = {(DOMAIN, device_id)}
-            via_device = (DOMAIN, host)
+            via_device = True
         elif key in {"mac", "ip_address", "lmac", "lip", "lan_state"} or key.lower().startswith("lan_"):
             # lmac/lip are Ethernet-interface identifiers.
             device_id = f"{host}_ethernet"
@@ -137,15 +148,22 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         else:
             device_name = entry.data["name"]
             identifiers = {(DOMAIN, host)}
-            via_device = None
+            via_device = False
 
+        via_device_id = (
+            dr.async_get_device_id_by_identifier(
+                coordinator.hass, (DOMAIN, host), config_entry_id=entry.entry_id
+            )
+            if via_device
+            else None
+        )
         self._target_device_identifiers = identifiers
-        self._target_via_device = via_device
+        self._target_via_device_id = via_device_id
         self._target_device_name = device_name
         self._entry_id = entry.entry_id
         self._attr_device_info = DeviceInfo(
             identifiers=identifiers,
-            via_device=via_device,
+            via_device_id=via_device_id,
             manufacturer="Ubiquiti",
             model="NanoStation5 / airOS 4.x",
             name=device_name,
@@ -155,7 +173,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
     async def async_added_to_hass(self):
         """Ensure child devices exist and migrate existing entity assignments."""
         await super().async_added_to_hass()
-        if self._target_via_device is None:
+        if self._target_via_device_id is None:
             return
 
         device_registry = dr.async_get(self.hass)
@@ -166,7 +184,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             model="NanoStation5 / airOS 4.x",
             name=self._target_device_name,
             configuration_url=self.coordinator.host.rstrip("/"),
-            via_device=self._target_via_device,
+            via_device_id=self._target_via_device_id,
         )
         entity_registry = er.async_get(self.hass)
         entity_entry = entity_registry.async_get(self.entity_id)
