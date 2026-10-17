@@ -65,14 +65,33 @@ SENSORS = {
 }
 
 
+def _friendly_name(key):
+    """Create a readable label for unrecognised scalar fields."""
+    return key.replace("_", " ").replace("-", " ").strip().title()
+
+
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]
     data = coordinator.data or {}
-    entities = [
-        AirOSSensor(coordinator, entry, key, *description)
-        for key, description in SENSORS.items()
-        if key in data and data[key] is not None
-    ]
+    entities = []
+
+    # First add known sensors with units and device classes.
+    for key, description in SENSORS.items():
+        if key in data and data[key] is not None:
+            entities.append(AirOSSensor(coordinator, entry, key, *description))
+
+    # Also expose every additional scalar field found in the HTTP responses.
+    # This deliberately makes discovery broad so users can decide which raw
+    # firmware-specific sensors they want to keep or disable later.
+    for key, value in data.items():
+        if key in SENSORS or value is None or isinstance(value, (dict, list, tuple, set)):
+            continue
+        entities.append(
+            AirOSSensor(
+                coordinator, entry, key, _friendly_name(key), None, None, None
+            )
+        )
+
     async_add_entities(entities)
 
 
@@ -100,6 +119,10 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         value = (self.coordinator.data or {}).get(self.key)
         if value is None:
             return None
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return value
         if self.key in {
             "signal", "noise", "ccq", "snr", "wlanTxRate", "wlanRxRate",
             "frequency", "uptime_seconds", "channel", "ack", "rstatus",
