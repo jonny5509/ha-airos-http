@@ -27,7 +27,6 @@ SENSORS = {
     "mac": ("Device MAC Address", None, None, None),
     "ip_address": ("Device IP Address", None, None, None),
     "uptime_seconds": ("Uptime", UnitOfTime.SECONDS, SensorDeviceClass.DURATION, SensorStateClass.TOTAL_INCREASING),
-    "firmware_upgrade": ("Firmware Upgrade", None, None, None),
     "apmac": ("Access Point MAC Address", None, None, None),
     "channel": ("Wireless Channel", None, None, None),
     "date_time": ("Radio Date and Time", None, None, None),
