@@ -121,10 +121,16 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             device_name = f"{entry.data['name']} Wireless"
             identifiers = {(DOMAIN, device_id)}
             via_device = (DOMAIN, host)
-        elif key in {"mac", "lan_state"} or key.lower().startswith("lan_"):
-            # lmac is normalised to "mac" and belongs with the Ethernet interface.
+        elif key in {"mac", "ip_address", "lan_state"} or key.lower().startswith("lan_"):
+            # lmac and lip are normalised to device MAC/IP and belong with Ethernet.
             device_id = f"{host}_ethernet"
             device_name = f"{entry.data['name']} Ethernet"
+            identifiers = {(DOMAIN, device_id)}
+            via_device = (DOMAIN, host)
+        elif key in {"wlanMac", "wlan_ip_address"}:
+            # wmac and wip are wireless-interface identifiers.
+            device_id = f"{host}_wireless"
+            device_name = f"{entry.data['name']} Wireless"
             identifiers = {(DOMAIN, device_id)}
             via_device = (DOMAIN, host)
         else:
