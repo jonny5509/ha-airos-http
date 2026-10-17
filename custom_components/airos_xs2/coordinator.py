@@ -149,7 +149,9 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
         # airOS 4.0.4's actual login form submits an empty hidden "uri" field.
         # A successful login responds with HTTP 302 Location: /index.cgi.
         await self._request("login.cgi")
-        form = aiohttp.FormData()
+        # The device form explicitly declares enctype="multipart/form-data".
+        # Force multipart even though every field is a plain string.
+        form = aiohttp.FormData(default_to_multipart=True)
         form.add_field("uri", "")
         form.add_field("username", self.username)
         form.add_field("password", self.password)
