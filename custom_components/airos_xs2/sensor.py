@@ -117,18 +117,18 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             "wlan_rxbytes", "wlan_rxpackets", "wlan_rxerrors",
             "wlan_txbytes", "wlan_txpackets", "wlan_txerrors",
         }
-        if key in wireless_keys or key.lower().startswith(("wlan_", "wireless_")):
+        if key in wireless_keys or key in {"wmac", "wip"} or key.lower().startswith(("wlan_", "wireless_")):
             device_id = f"{host}_wireless"
             device_name = f"{entry.data['name']} Wireless"
             identifiers = {(DOMAIN, device_id)}
             via_device = (DOMAIN, host)
-        elif key in {"mac", "ip_address", "lip", "lan_state"} or key.lower().startswith("lan_"):
+        elif key in {"mac", "ip_address", "lmac", "lip", "lan_state"} or key.lower().startswith("lan_"):
             # lmac/lip are Ethernet-interface identifiers.
             device_id = f"{host}_ethernet"
             device_name = f"{entry.data['name']} Ethernet"
             identifiers = {(DOMAIN, device_id)}
             via_device = (DOMAIN, host)
-        elif key in {"wlanMac", "wlan_ip_address", "wip"}:
+        elif key in {"wlanMac", "wlan_ip_address"}:
             # wmac and wip are wireless-interface identifiers.
             device_id = f"{host}_wireless"
             device_name = f"{entry.data['name']} Wireless"
