@@ -36,7 +36,7 @@ def _parse_status(body):
 
     assignments = {}
     pattern = re.compile(
-        r"""^\s*([A-Za-z_]\w*)\s*=\s*(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)'|(-?\d+(?:\.\d+)?)|(true|false))\s*;""",
+        r"""\b([A-Za-z_]\w*)\s*=\s*(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)'|(-?\d+(?:\.\d+)?)|(true|false))\s*;""",
         re.IGNORECASE | re.MULTILINE,
     )
     for match in pattern.finditer(body):
