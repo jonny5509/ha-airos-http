@@ -182,9 +182,11 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
             or 'id="loginform"' in lowered
         ):
             raise UpdateFailed(
-                "airOS login.cgi returned the login page instead of the "
-                "expected redirect to /index.cgi. Check the configured "
-                "credentials; the integration does not log them."
+                f"airOS login.cgi returned the login page (HTTP {status}, "
+                f"Location: {location or 'none'}). The radio did not redirect "
+                "to /index.cgi after login. Confirm Home Assistant is running "
+                "the latest integration code and that the configured credentials "
+                "match the working browser/curl login. Passwords are not logged."
             )
         if status >= 400:
             raise UpdateFailed(f"airOS HTTP {status} from login.cgi")
