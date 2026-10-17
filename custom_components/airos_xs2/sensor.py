@@ -122,8 +122,8 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             device_name = f"{entry.data['name']} Wireless"
             identifiers = {(DOMAIN, device_id)}
             via_device = (DOMAIN, host)
-        elif key in {"mac", "ip_address", "lan_state"} or key.lower().startswith("lan_"):
-            # lmac and lip are normalised to device MAC/IP and belong with Ethernet.
+        elif key in {"mac", "ip_address", "lip", "lan_state"} or key.lower().startswith("lan_"):
+            # lmac/lip are Ethernet-interface identifiers.
             device_id = f"{host}_ethernet"
             device_name = f"{entry.data['name']} Ethernet"
             identifiers = {(DOMAIN, device_id)}
@@ -140,6 +140,9 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             via_device = None
 
         self._target_device_identifiers = identifiers
+        self._target_via_device = via_device
+        self._target_device_name = device_name
+        self._entry_id = entry.entry_id
         self._attr_device_info = DeviceInfo(
             identifiers=identifiers,
             via_device=via_device,
@@ -150,17 +153,25 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         )
 
     async def async_added_to_hass(self):
-        """Move existing registry entries to the correct split device."""
+        """Ensure child devices exist and migrate existing entity assignments."""
         await super().async_added_to_hass()
-        device = dr.async_get(self.hass).async_get_device(
-            self._target_device_identifiers
-        )
-        if device is None:
+        if self._target_via_device is None:
             return
-        registry = er.async_get(self.hass)
-        entity = registry.async_get(self.entity_id)
-        if entity is not None and entity.device_id != device.id:
-            registry.async_update_entity(self.entity_id, device_id=device.id)
+
+        device_registry = dr.async_get(self.hass)
+        device = device_registry.async_get_or_create(
+            config_entry_id=self._entry_id,
+            identifiers=self._target_device_identifiers,
+            manufacturer="Ubiquiti",
+            model="NanoStation5 / airOS 4.x",
+            name=self._target_device_name,
+            configuration_url=self.coordinator.host.rstrip("/"),
+            via_device=self._target_via_device,
+        )
+        entity_registry = er.async_get(self.hass)
+        entity_entry = entity_registry.async_get(self.entity_id)
+        if entity_entry is not None and entity_entry.device_id != device.id:
+            entity_registry.async_update_entity(self.entity_id, device_id=device.id)
 
     @property
     def native_value(self):
