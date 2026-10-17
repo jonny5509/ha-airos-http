@@ -79,7 +79,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     # Ensure the parent radio device exists before creating interface devices.
     device_registry = dr.async_get(hass)
-    device_registry.async_get_or_create(
+    parent_device = device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, entry.data["host"])},
         manufacturer="Ubiquiti",
@@ -91,7 +91,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     # First add known sensors with units and device classes.
     for key, description in SENSORS.items():
         if key in data and data[key] is not None:
-            entities.append(AirOSSensor(coordinator, entry, key, *description))
+            entities.append(AirOSSensor(coordinator, entry, key, parent_device.id, *description))
 
     # Also expose every additional scalar field found in the HTTP responses.
     # This deliberately makes discovery broad so users can decide which raw
@@ -101,7 +101,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             continue
         entities.append(
             AirOSSensor(
-                coordinator, entry, key, _friendly_name(key), None, None, None
+                coordinator, entry, key, parent_device.id, _friendly_name(key), None, None, None
             )
         )
 
@@ -111,7 +111,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 class AirOSSensor(CoordinatorEntity, SensorEntity):
     _attr_has_entity_name = True
 
-    def __init__(self, coordinator, entry, key, label, unit, device_class, state_class):
+    def __init__(self, coordinator, entry, key, parent_device_id, label, unit, device_class, state_class):
         super().__init__(coordinator)
         self.key = key
         self._attr_name = label
@@ -150,13 +150,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             identifiers = {(DOMAIN, host)}
             via_device = False
 
-        via_device_id = (
-            dr.async_get_device_id_by_identifier(
-                coordinator.hass, (DOMAIN, host), config_entry_id=entry.entry_id
-            )
-            if via_device
-            else None
-        )
+        via_device_id = parent_device_id if via_device else None
         self._target_device_identifiers = identifiers
         self._target_via_device_id = via_device_id
         self._target_device_name = device_name
