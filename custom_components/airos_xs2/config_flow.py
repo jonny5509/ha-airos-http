@@ -8,9 +8,10 @@ class AiRXS2ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input=None):
         if user_input is not None:
+            # This legacy device is configured for plain HTTP only.
             host = user_input["host"].strip().rstrip("/")
-            if not host.startswith(("http://", "https://")):
-                host = "http://" + host
+            host = host.removeprefix("https://").removeprefix("http://").strip("/")
+            host = "http://" + host
             data = {**user_input, "host": host}
             await self.async_set_unique_id(host.lower())
             self._abort_if_unique_id_configured()
