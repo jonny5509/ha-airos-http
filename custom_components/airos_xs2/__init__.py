@@ -4,7 +4,7 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN
 from .coordinator import AiRXS2Coordinator
 
-PLATFORMS = ["sensor"]
+PLATFORMS = ["sensor", "button"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
