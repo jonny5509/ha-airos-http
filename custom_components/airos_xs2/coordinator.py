@@ -111,15 +111,15 @@ def _extract_firmware_version(text):
     if not text:
         return None
     patterns = (
-        r"(?:firmwareVersion|firmware_version|firmware version|firmware-version)\\s*[=:]\\s*[\\\"']?([^\\s,;\\\"'<>]+)",
-        r"firmware(?:\\s+version)?\\s*</?[^>]*>\\s*(?:</?[^>]*>\\s*)*([vV]?\\d+\\.\\d+\\.\\d+(?:\\.\\d+)?)",
-        r"firmware(?:\\s+version)?\\s*[:=]\\s*([vV]?\\d+\\.\\d+\\.\\d+(?:\\.\\d+)?)",
+        r"(?:firmwareVersion|firmware_version|firmware version|firmware-version)\s*[=:]\s*[\\"']?([^\s,;\\"'<>]+)",
+        r"firmware(?:\s+version)?\s*</?[^>]*>\s*(?:</?[^>]*>\s*)*([vV]?\d+\.\d+\.\d+(?:\.\d+)?)",
+        r"firmware(?:\s+version)?\s*[:=]\s*([vV]?\d+\.\d+\.\d+(?:\.\d+)?)",
     )
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             value = match.group(1).strip().rstrip(".,")
-            if re.search(r"\\d+\\.\\d+", value):
+            if re.search(r"\d+\.\d+", value):
                 return value
     return None
 
