@@ -4,7 +4,7 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN
 from .coordinator import AiRXS2Coordinator
 
-PLATFORMS = ["sensor", "button"]
+PLATFORMS = ["sensor", "switch"]
 
 # These are generic/default labels, not user-customised device names.
 _AUTO_NAMES = {
