@@ -171,16 +171,15 @@ async def async_setup_entry(hass, entry, async_add_entities):
         model = (coordinator.data or {}).get("device_model")
         if not model:
             return
-        for identifiers in (
-            {(DOMAIN, host)},
-            {(DOMAIN, f"{host}_wireless")},
-            {(DOMAIN, f"{host}_ethernet")},
-        ):
+        device_models = (
+            ({(DOMAIN, host)}, model),
+            ({(DOMAIN, f"{host}_wireless")}, f"{model} Wireless"),
+            ({(DOMAIN, f"{host}_ethernet")}, f"{model} Ethernet"),
+        )
+        for identifiers, wanted in device_models:
             device = device_registry.async_get_device(identifiers=identifiers)
-            if device:
-                wanted = model if identifiers == {(DOMAIN, host)} else f"{model} {'Wireless' if identifiers == {(DOMAIN, f'{host}_wireless')} else 'Ethernet'}"
-                if device.model != wanted:
-                    device_registry.async_update_device(device.id, model=wanted)
+            if device and device.model != wanted:
+                device_registry.async_update_device(device.id, model=wanted)
 
     entry.async_on_unload(coordinator.async_add_listener(update_device_model))
 
