@@ -137,7 +137,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             device_name = f"{entry.data['name']} Wireless"
             identifiers = {(DOMAIN, device_id)}
             via_device = True
-        elif key in {"lmac", "lip"} or normalized_key.startswith("lan_"):
+        elif key in {"mac", "ip_address", "lmac", "lip", "lan_state"} or normalized_key.startswith("lan_"):
             device_id = f"{host}_ethernet"
             device_name = f"{entry.data['name']} Ethernet"
             identifiers = {(DOMAIN, device_id)}
