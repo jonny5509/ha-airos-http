@@ -143,12 +143,13 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 
 class AirOSSensor(CoordinatorEntity, SensorEntity):
-    _attr_has_entity_name = True
+    # Match the SSH integration: include the device name in the entity name.
+    _attr_has_entity_name = False
 
     def __init__(self, coordinator, entry, key, parent_device_id, label, unit, device_class, state_class):
         super().__init__(coordinator)
         self.key = key
-        self._attr_name = label
+        self._attr_name = f"{entry.data['name']} {label}"
         self._attr_unique_id = f"{entry.data['host']}_{key}"
         self._attr_native_unit_of_measurement = unit
         self._attr_device_class = device_class
