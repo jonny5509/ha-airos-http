@@ -115,7 +115,7 @@ def _identify_device(data):
             raw = str(value)
             parts.append(raw)
             for match in re.finditer(
-                r"(deviceId|firmwareVersion|platform|deviceIp|board|product|model)\\s*=\\s*([^,;]+)",
+                r"(deviceId|firmwareVersion|platform|deviceIp|board|product|model)\s*=\s*([^,;]+)",
                 raw,
                 re.IGNORECASE,
             ):
@@ -123,9 +123,9 @@ def _identify_device(data):
 
     identity = " ".join(parts)
     compact = re.sub(r"[^a-z0-9]", "", identity.lower())
-    if re.search(r"nanostation\\s*2|\\bns2\\b|\\bxs2\\b", identity, re.IGNORECASE) or "nanostation2" in compact or "xs2" in compact:
+    if re.search(r"nanostation\s*2|\bns2\b|\bxs2\b", identity, re.IGNORECASE) or "nanostation2" in compact or "xs2" in compact:
         data["device_model"] = "NanoStation2"
-    elif re.search(r"nanostation\\s*5|\\bns5\\b|\\bxs5\\b", identity, re.IGNORECASE) or "nanostation5" in compact or "xs5" in compact:
+    elif re.search(r"nanostation\s*5|\bns5\b|\bxs5\b", identity, re.IGNORECASE) or "nanostation5" in compact or "xs5" in compact:
         data["device_model"] = "NanoStation5"
     else:
         for key in ("platform", "deviceId", "board", "board_name", "product", "model", "cpu_model"):
