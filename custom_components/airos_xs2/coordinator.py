@@ -99,14 +99,14 @@ def _normalise(data):
     return result
 
 
-def _identify_device(data):
-    """Infer the hardware model from identity metadata exposed over HTTP."""
+def _identify_device(data, extra_output=""):
+    """Infer the hardware model from airOS metadata and system-page text."""
     identity_keys = {
         "platform", "deviceid", "board", "boardname", "board_name",
         "product", "productname", "model", "devicemodel", "hardware",
         "firmwareversion", "cpu_model",
     }
-    parts = []
+    parts = [extra_output]
     for key, value in data.items():
         if key.lower() in identity_keys:
             parts.append(str(value))
@@ -262,6 +262,9 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
                     )
                     if hostname_value and hostname_value.group(1).strip():
                         result["hostname"] = hostname_value.group(1).strip()
+                # System-page text can expose legacy board/model identifiers that
+                # status.cgi omits, similar to the SSH integration's board/version probes.
+                _identify_device(result, re.sub(r"<[^>]+>", " ", system_page))
             except (aiohttp.ClientError, TimeoutError, UpdateFailed):
                 # Status sensors remain available if the optional settings page fails.
                 pass
