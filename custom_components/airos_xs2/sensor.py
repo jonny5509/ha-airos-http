@@ -83,10 +83,24 @@ async def async_setup_entry(hass, entry, async_add_entities):
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, entry.data["host"])},
         manufacturer="Ubiquiti",
-        model="NanoStation5 / airOS 4.x",
+        model=(coordinator.data or {}).get("device_model") or "Ubiquiti AirOS",
         name=entry.data["name"],
         configuration_url=coordinator.host.rstrip("/"),
     )
+
+    # Keep the parent registry model in sync if hardware identification appears
+    # only after a later successful poll.
+    def _update_registered_device_model():
+        detected_model = (coordinator.data or {}).get("device_model")
+        if not detected_model:
+            return
+        current_device = device_registry.async_get_device(
+            identifiers={(DOMAIN, entry.data["host"])}
+        )
+        if current_device and current_device.model != detected_model:
+            device_registry.async_update_device(current_device.id, model=detected_model)
+
+    entry.async_on_unload(coordinator.async_add_listener(_update_registered_device_model))
 
     # First add known sensors with units and device classes.
     for key, description in SENSORS.items():
@@ -159,7 +173,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             identifiers=identifiers,
             via_device_id=via_device_id,
             manufacturer="Ubiquiti",
-            model="NanoStation5 / airOS 4.x",
+            model=(coordinator.data or {}).get("device_model") or "Ubiquiti AirOS",
             name=device_name,
             configuration_url=coordinator.host.rstrip("/"),
         )
@@ -175,7 +189,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             config_entry_id=self._entry_id,
             identifiers=self._target_device_identifiers,
             manufacturer="Ubiquiti",
-            model="NanoStation5 / airOS 4.x",
+            model=(coordinator.data or {}).get("device_model") or "Ubiquiti AirOS",
             name=self._target_device_name,
             configuration_url=self.coordinator.host.rstrip("/"),
             via_device_id=self._target_via_device_id,
