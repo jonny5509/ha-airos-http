@@ -1,214 +1,359 @@
-"""Sensors populated by the airOS HTTP status endpoint."""
-from homeassistant.components.sensor import (
-    SensorDeviceClass,
-    SensorEntity,
-    SensorStateClass,
-)
-from homeassistant.const import PERCENTAGE, UnitOfDataRate, UnitOfInformation, UnitOfTime
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-
 from .const import DOMAIN
+import re
 
-# Key -> (friendly name, unit, device class, state class).
-# Include fields actually returned by airOS 4.0.4's status.cgi. Optional fields
-# are only created when the device really supplies them, avoiding permanently
-# unavailable entities for values this firmware does not expose.
-SENSORS = {
-    "signal": ("Wireless Signal", "dBm", SensorDeviceClass.SIGNAL_STRENGTH, None),
-    "noise": ("Wireless Noise", "dBm", None, None),
-    "ccq": ("Wireless CCQ", PERCENTAGE, None, None),
-    "snr": ("Wireless SNR", "dB", None, None),
-    "wlanTxRate": ("Wireless Transmit Rate", UnitOfDataRate.MEGABITS_PER_SECOND, None, None),
-    "wlanRxRate": ("Wireless Receive Rate", UnitOfDataRate.MEGABITS_PER_SECOND, None, None),
-    "essid": ("Wireless Network Name", None, None, None),
-    "frequency": ("Wireless Frequency", "MHz", None, None),
-    "wlanMac": ("Wireless MAC Address", None, None, None),
-    "wip": ("Wireless IP Address", None, None, None),
-    "wlan_ip": ("Wireless IP Address", None, None, None),
-    "wlan_state": ("Wireless State", None, None, None),
-    "mac": ("Device MAC Address", None, None, None),
-    "ip_address": ("Device IP Address", None, None, None),
-    "hostname": ("Hostname", None, None, None),
-    "uptime_seconds": ("Uptime", UnitOfTime.SECONDS, SensorDeviceClass.DURATION, SensorStateClass.TOTAL_INCREASING),
-    "apmac": ("Access Point MAC Address", None, None, None),
-    "channel": ("Wireless Channel", None, None, None),
-    "date_time": ("Radio Date and Time", None, None, None),
-    "security": ("Wireless Security", None, None, None),
-    "qos": ("Wireless QoS", None, None, None),
-    "antenna": ("Antenna Polarization", None, None, None),
-    "ack": ("ACK Distance", "km", None, None),
-    "rstatus": ("Wireless Radio Status Code", None, None, None),
-    "err_nwids": ("Wireless Invalid Network IDs", None, None, SensorStateClass.TOTAL_INCREASING),
-    "err_crypts": ("Wireless Crypto Errors", None, None, SensorStateClass.TOTAL_INCREASING),
-    "err_frags": ("Wireless Fragment Errors", None, None, SensorStateClass.TOTAL_INCREASING),
-    "err_retries": ("Wireless Retries", None, None, SensorStateClass.TOTAL_INCREASING),
-    "err_beacons": ("Wireless Beacon Errors", None, None, SensorStateClass.TOTAL_INCREASING),
-    "err_misc": ("Wireless Other Errors", None, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_state": ("LAN State", None, None, None),
-    "lmac": ("Ethernet MAC Address", None, None, None),
-    "lip": ("Ethernet IP Address", None, None, None),
-    "lan_rxbytes": ("LAN Received Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_rxpackets": ("LAN Received Packets", None, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_rxerrors": ("LAN Receive Errors", None, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_txbytes": ("LAN Transmitted Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_txpackets": ("LAN Transmitted Packets", None, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_txerrors": ("LAN Transmit Errors", None, None, SensorStateClass.TOTAL_INCREASING),
-    "wlan_rxbytes": ("Wireless Received Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
-    "wlan_rxpackets": ("Wireless Received Packets", None, None, SensorStateClass.TOTAL_INCREASING),
-    "wlan_rxerrors": ("Wireless Receive Errors", None, None, SensorStateClass.TOTAL_INCREASING),
-    "wlan_txbytes": ("Wireless Transmitted Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
-    "wlan_txpackets": ("Wireless Transmitted Packets", None, None, SensorStateClass.TOTAL_INCREASING),
-    "wlan_txerrors": ("Wireless Transmit Errors", None, None, SensorStateClass.TOTAL_INCREASING),
-    "ppp_ip": ("PPP IP Address", None, None, None),
-    "ppp_state": ("PPP State", None, None, None),
-    "ppp_rxbytes": ("PPP Received Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
-    "ppp_rxpackets": ("PPP Received Packets", None, None, SensorStateClass.TOTAL_INCREASING),
-    "ppp_rxerrors": ("PPP Receive Errors", None, None, SensorStateClass.TOTAL_INCREASING),
-    "ppp_txbytes": ("PPP Transmitted Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
-    "ppp_txpackets": ("PPP Transmitted Packets", None, None, SensorStateClass.TOTAL_INCREASING),
-    "ppp_txerrors": ("PPP Transmit Errors", None, None, SensorStateClass.TOTAL_INCREASING),
+BASE_SENSORS = {
+    "signal": ("Wireless Signal", "dBm"),
+    "noise": ("Wireless Noise", "dBm"),
+    "ccq": ("Wireless CCQ", "%"),
+    "snr": ("Wireless SNR", "dB"),
+    "wlanTxRate": ("Wireless Transmit Rate", "Mbit/s"),
+    "wlanRxRate": ("Wireless Receive Rate", "Mbit/s"),
+}
+
+OPTIONAL_SENSORS = {
+    "essid": ("Wireless Network Name (SSID)", None),
+    "frequency": ("Wireless Frequency", "MHz"),
+    "wlanMac": ("Wireless MAC Address", None),
+    "ethernet_mac": ("Ethernet MAC Address", None),
+    "ethernet_interface_state": ("Ethernet Interface State", None),
+    "wireless_interface_state": ("Wireless Interface State", None),
+    "wireless_mac": ("Wireless MAC Address", None),
+    "mac": ("Device MAC Address", None),
+    "mode": ("Wireless Mode", None),
+    "hostname": ("Hostname", None),
+    "uptime_seconds": ("Uptime", "s"),
+    "ip_address": ("Device IP Address", None),
+    "cpu_model": ("CPU Model", None),
+    "cpu_usage": ("CPU Usage", "%"),
+    "firmware_upgrade": ("Firmware Upgrade", None),
+    "ram_usage_percent": ("RAM Usage", "%"),
+    "ethernet_rx_bytes": ("Ethernet Bytes Received", "B"),
+    "ethernet_tx_bytes": ("Ethernet Bytes Sent", "B"),
+    "wireless_rx_bytes": ("Wireless Bytes Received", "B"),
+    "wireless_tx_bytes": ("Wireless Bytes Sent", "B"),
+}
+
+DEVICE_METADATA = {
+    "deviceId": ("Device ID", None),
+    "firmwareVersion": ("Firmware Version", None),
+    "platform": ("Platform", None),
+    "deviceIp": ("Configured Device IP Address", None),
+}
+
+
+def _parse_device_name(raw_name):
+    """Split comma-separated AirOS metadata out of the device display name."""
+    parts = [part.strip() for part in raw_name.split(",")]
+    metadata = {}
+    known_keys = {key.lower(): key for key in DEVICE_METADATA}
+
+    # Metadata keys can vary in capitalization between AirOS versions.
+    # Match known keys case-insensitively and keep only the clean device name.
+    for part in parts[1:]:
+        if "=" not in part:
+            continue
+        key, value = part.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        canonical_key = known_keys.get(key.lower())
+        if canonical_key and value:
+            metadata[canonical_key] = value
+
+    display_name = parts[0] or "AirOS Device"
+    return display_name, metadata
+
+
+SENSOR_NAME_OVERRIDES = {
+    "signal": "Wireless Signal",
+    "noise": "Wireless Noise",
+    "ccq": "Wireless CCQ",
+    "snr": "Wireless SNR",
+    "wlanTxRate": "Wireless Transmit Rate",
+    "wlanRxRate": "Wireless Receive Rate",
+    "wlanMac": "Wireless MAC Address",
+    "wireless_mac": "Wireless MAC Address",
+    "ethernet_mac": "Ethernet MAC Address",
+    "ethernet_interface_state": "Ethernet Interface State",
+    "wireless_interface_state": "Wireless Interface State",
+    "mac": "Device MAC Address",
+    "essid": "Wireless Network Name (SSID)",
+    "frequency": "Wireless Frequency",
+    "mode": "Wireless Mode",
+    "hostname": "Hostname",
+    "uptime_seconds": "Uptime",
+    "ip_address": "Device IP Address",
+    "cpu_model": "CPU Model",
+    "cpu_usage": "CPU Usage",
+    "firmware_upgrade": "Firmware Upgrade",
+    "ram_usage_percent": "RAM Usage",
+    "ethernet_rx_bytes": "Ethernet Bytes Received",
+    "ethernet_tx_bytes": "Ethernet Bytes Sent",
+    "wireless_rx_bytes": "Wireless Bytes Received",
+    "wireless_tx_bytes": "Wireless Bytes Sent",
+    "deviceId": "Device ID",
+    "firmwareVersion": "Firmware Version",
+    "platform": "Platform",
+    "deviceIp": "Configured Device IP Address",
 }
 
 
 def _friendly_name(key):
-    """Create a readable label for unrecognised scalar fields."""
-    return key.replace("_", " ").replace("-", " ").strip().title()
+    """Return a readable, consistently capitalized name for a sensor key."""
+    if key in SENSOR_NAME_OVERRIDES:
+        return SENSOR_NAME_OVERRIDES[key]
+
+    # Convert camelCase and separators into words before applying protocol terms.
+    name = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", key)
+    name = re.sub(r"[_-]+", " ", name).strip()
+    words = name.split()
+    normalized = []
+    for word in words:
+        lower = word.lower()
+        if lower in {"wlan", "wireless", "wifi"}:
+            normalized.append("Wireless")
+        elif lower in {"lan", "ethernet", "eth"}:
+            normalized.append("Ethernet")
+        elif lower in {"mac", "ip", "cpu", "ccq", "snr", "ssid", "tx", "rx", "mhz", "dbm", "id", "url", "ram"}:
+            normalized.append(lower.upper())
+        else:
+            normalized.append(lower.capitalize())
+    return " ".join(normalized) or "Unknown"
+
+
+def _device_kind(key):
+    """Return the Home Assistant device that should own this sensor."""
+    normalized = key.lower()
+    # Check WLAN first because "lan" is also present inside "wlan".
+    if normalized.startswith(("wlan", "wireless_")) or key in BASE_SENSORS or key in {
+        "essid", "frequency", "wireless_mac", "wireless_interface_state", "mode",
+    }:
+        return "wireless"
+    # Keep the single canonical uptime sensor on the main device.
+    if key == "uptime_seconds":
+        return "main"
+    # Legacy AirOS keys may call the wired interface "lan" or "eth".
+    if normalized.startswith(("ethernet_", "lan", "eth")) or normalized == "ethernet_mac":
+        return "ethernet"
+    return "main"
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]
     data = coordinator.data or {}
-    # Ensure the parent radio device exists before creating interface devices.
+    display_name, metadata = _parse_device_name(entry.data["name"])
+    # Register the parent device first so child devices can reference its ID.
     device_registry = dr.async_get(hass)
     parent_device = device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, entry.data["host"])},
+        name=display_name,
         manufacturer="Ubiquiti",
-        model="NanoStation5 / airOS 4.x",
-        name=entry.data["name"],
-        configuration_url=coordinator.host.rstrip("/"),
+        model=data.get("device_model") or "Ubiquiti AirOS",
     )
 
-    # Expose every scalar field currently returned, using richer metadata for
-    # known fields and a friendly-name fallback for firmware-specific fields.
-    known_keys = set()
+    # Ensure the Ethernet child exists, then move existing Ethernet entities
+    # back under it. This preserves entity IDs and their history after upgrades.
+    host = entry.data["host"]
+    ethernet_device = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, f"{host}_ethernet")},
+        name=f"{display_name} Ethernet",
+        manufacturer="Ubiquiti",
+        model=f"{data.get('device_model') or 'AirOS'} Ethernet",
+        via_device=(DOMAIN, host),
+    )
+    entity_registry = er.async_get(hass)
 
-    def add_new_sensors():
-        current_data = coordinator.data or {}
-        new_entities = []
-        for key, value in current_data.items():
-            if key in known_keys or value is None or isinstance(value, (dict, list, tuple, set)):
-                continue
-            description = SENSORS.get(key, (_friendly_name(key), None, None, None))
-            new_entities.append(AirOSSensor(coordinator, entry, key, parent_device.id, *description))
-            known_keys.add(key)
-        if new_entities:
-            async_add_entities(new_entities)
+    # Remove registry entries left behind by older releases that exposed raw
+    # memory counters as individual sensors. These keys are now attributes on
+    # the single RAM Usage sensor, so leaving the old entries creates stale
+    # Memory entities in Home Assistant after an upgrade.
+    obsolete_memory_keys = {
+        "mem_total_bytes",
+        "mem_free_bytes",
+        "mem_available_bytes",
+    }
+    host_prefix = f"{host}_"
+    for entity in list(entity_registry.entities.values()):
+        if entity.config_entry_id != entry.entry_id:
+            continue
+        if entity.unique_id.startswith(host_prefix):
+            old_key = entity.unique_id[len(host_prefix):]
+            if old_key in obsolete_memory_keys:
+                entity_registry.async_remove(entity.entity_id)
 
-    add_new_sensors()
-    entry.async_on_unload(coordinator.async_add_listener(add_new_sensors))
+    for entity in entity_registry.entities.values():
+        if entity.config_entry_id != entry.entry_id:
+            continue
+        prefix = f"{host}_"
+        if not entity.unique_id.startswith(prefix):
+            continue
+        key = entity.unique_id[len(prefix):]
+        if _device_kind(key) == "ethernet" and entity.device_id != ethernet_device.id:
+            entity_registry.async_update_entity(
+                entity.entity_id, device_id=ethernet_device.id
+            )
 
+    # The first probe may not identify the hardware. Update the main device
+    # registry entry on later coordinator refreshes once a specific model appears.
+    def _update_registered_device_model():
+        detected_model = (coordinator.data or {}).get("device_model")
+        if detected_model and detected_model != "Ubiquiti AirOS":
+            current_device = device_registry.async_get_device(
+                identifiers={(DOMAIN, entry.data["host"])}
+            )
+            if current_device and current_device.model != detected_model:
+                device_registry.async_update_device(
+                    current_device.id, model=detected_model
+                )
 
-class AirOSSensor(CoordinatorEntity, SensorEntity):
-    _attr_has_entity_name = True
+    entry.async_on_unload(coordinator.async_add_listener(_update_registered_device_model))
 
-    def __init__(self, coordinator, entry, key, parent_device_id, label, unit, device_class, state_class):
-        super().__init__(coordinator)
-        self.key = key
-        self._attr_name = label
-        self._attr_unique_id = f"{entry.data['host']}_{key}"
-        self._attr_native_unit_of_measurement = unit
-        self._attr_device_class = device_class
-        self._attr_state_class = state_class
-        host = entry.data["host"]
-        wireless_keys = {
-            "signal", "noise", "ccq", "snr", "wlanTxRate", "wlanRxRate",
-            "essid", "frequency", "wlanMac", "wip", "apmac", "channel",
-            "security", "qos", "antenna", "ack", "rstatus", "err_nwids",
-            "err_crypts", "err_frags", "err_retries", "err_beacons", "err_misc",
-        }
-        normalized_key = key.lower()
-        if key in wireless_keys or normalized_key.startswith(("wlan", "wireless")) or normalized_key in {"wlanmac", "wlan_ip_address"}:
-            device_id = f"{host}_wireless"
-            device_name = f"{entry.data['name']} Wireless"
-            identifiers = {(DOMAIN, device_id)}
-            via_device = True
-        elif key in {"mac", "ip_address", "lmac", "lip", "lan_state"} or normalized_key.startswith("lan_"):
-            device_id = f"{host}_ethernet"
-            device_name = f"{entry.data['name']} Ethernet"
-            identifiers = {(DOMAIN, device_id)}
-            via_device = True
-        elif normalized_key.startswith("ppp_"):
-            device_id = host + "_ppp"
-            device_name = entry.data["name"] + " PPP"
-            identifiers = {(DOMAIN, device_id)}
-            via_device = True
-        else:
-            device_name = entry.data["name"]
-            identifiers = {(DOMAIN, host)}
-            via_device = False
+    sensors = [
+        AiRXS2Sensor(
+            coordinator, entry, key, unit, label, display_name=display_name,
+            device_kind=_device_kind(key), parent_device_id=parent_device.id,
+        )
+        for key, (label, unit) in BASE_SENSORS.items()
+    ]
 
-        via_device_id = parent_device_id if via_device else None
-        self._parent_device_id = parent_device_id
-        self._target_device_identifiers = identifiers
-        self._target_via_device_id = via_device_id
-        self._target_device_name = device_name
-        self._entry_id = entry.entry_id
-        self._attr_device_info = DeviceInfo(
-            identifiers=identifiers,
-            via_device_id=via_device_id,
-            manufacturer="Ubiquiti",
-            model="NanoStation5 / airOS 4.x",
-            name=device_name,
-            configuration_url=coordinator.host.rstrip("/"),
+    added_keys = set(BASE_SENSORS)
+    for key, (label, unit) in OPTIONAL_SENSORS.items():
+        # Prefer the MAC reported directly by AirOS over the interface-probe
+        # alias when both describe the same wireless interface.
+        if key == "wireless_mac" and data.get("wlanMac") not in (None, ""):
+            added_keys.add(key)
+            continue
+        # IP discovery depends on an optional SSH probe. Register the entity
+        # even if the first probe fails, so it can become available on later polls.
+        if key in {"ip_address", "uptime_seconds", "ethernet_interface_state", "wireless_interface_state", "cpu_usage", "firmware_upgrade", "ram_usage_percent"} or data.get(key) not in (None, ""):
+            sensors.append(
+                AiRXS2Sensor(
+                    coordinator, entry, key, unit, label,
+                    display_name=display_name, device_kind=_device_kind(key),
+                    parent_device_id=parent_device.id,
+                )
+            )
+            added_keys.add(key)
+
+    # Firmware detail fields are attributes of the single Firmware Upgrade sensor,
+    # not separate entities of their own.
+    added_keys.update(key for key in data if key.startswith("firmware_upgrade_"))
+    # Raw memory counters are attributes of RAM Usage, not separate entities.
+    added_keys.update({"mem_total_bytes", "mem_free_bytes", "mem_available_bytes"})
+
+    for key, value in data.items():
+        if key not in added_keys and value not in (None, ""):
+            sensors.append(
+                AiRXS2Sensor(
+                    coordinator, entry, key, None, _friendly_name(key),
+                    display_name=display_name, device_kind=_device_kind(key),
+                    parent_device_id=parent_device.id,
+                )
+            )
+
+    for key, value in metadata.items():
+        label, unit = DEVICE_METADATA[key]
+        sensors.append(
+            AiRXS2Sensor(
+                coordinator, entry, f"device_metadata_{key}", unit, label,
+                display_name=display_name, static_value=value, device_kind="main",
+                parent_device_id=parent_device.id,
+            )
         )
 
-    async def async_added_to_hass(self):
-        """Ensure child devices exist and migrate existing entity assignments."""
-        await super().async_added_to_hass()
-        device_registry = dr.async_get(self.hass)
-        if self._target_via_device_id is None:
-            target_device_id = self._parent_device_id
-        else:
-            device = device_registry.async_get_or_create(
-                config_entry_id=self._entry_id,
-                identifiers=self._target_device_identifiers,
-                manufacturer="Ubiquiti",
-                model="NanoStation5 / airOS 4.x",
-                name=self._target_device_name,
-                configuration_url=self.coordinator.host.rstrip("/"),
-                via_device_id=self._target_via_device_id,
-            )
-            target_device_id = device.id
+    async_add_entities(sensors)
 
-        entity_registry = er.async_get(self.hass)
-        entity_entry = entity_registry.async_get(self.entity_id)
-        if entity_entry is not None and entity_entry.device_id != target_device_id:
-            entity_registry.async_update_entity(self.entity_id, device_id=target_device_id)
+
+class AiRXS2Sensor(SensorEntity):
+    def __init__(
+        self, coordinator, entry, key, unit, label=None, display_name=None,
+        static_value=None, device_kind="main", unique_id_suffix=None,
+        parent_device_id=None,
+    ):
+        self.coordinator = coordinator
+        self.key = key
+        self._entry = entry
+        self._display_name = display_name or entry.data["name"]
+        self._static_value = static_value
+        self._device_kind = device_kind
+        self._parent_device_id = parent_device_id
+        if device_kind == "ethernet":
+            self._device_name = f"{self._display_name} Ethernet"
+        elif device_kind == "wireless":
+            self._device_name = f"{self._display_name} Wireless"
+        else:
+            self._device_name = self._display_name
+        sensor_label = re.sub(r"\bside\b", "", label or key, flags=re.IGNORECASE).strip()
+        self._attr_name = sensor_label or key
+        self._attr_unique_id = f"{entry.data['host']}_{key}" + (
+            f"_{unique_id_suffix}" if unique_id_suffix else ""
+        )
+        if unit:
+            self._attr_native_unit_of_measurement = unit
+
+        # Tell Home Assistant how to interpret readings and long-term statistics.
+        if key in {"signal", "noise"}:
+            self._attr_device_class = SensorDeviceClass.SIGNAL_STRENGTH
+        elif key == "frequency":
+            self._attr_device_class = SensorDeviceClass.FREQUENCY
+        elif key == "uptime_seconds":
+            self._attr_device_class = SensorDeviceClass.DURATION
+        elif key in {"ethernet_rx_bytes", "ethernet_tx_bytes",
+                     "wireless_rx_bytes", "wireless_tx_bytes"}:
+            self._attr_device_class = SensorDeviceClass.DATA_SIZE
+
+        if key in {"ethernet_rx_bytes", "ethernet_tx_bytes",
+                   "wireless_rx_bytes", "wireless_tx_bytes"}:
+            self._attr_state_class = SensorStateClass.TOTAL_INCREASING
+        elif key in {"signal", "noise", "ccq", "snr", "wlanTxRate", "wlanRxRate",
+                     "frequency", "cpu_usage",
+                     "ram_usage_percent"}:
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def device_info(self):
+        host = self._entry.data["host"]
+        info = {
+            "identifiers": {(DOMAIN, host if self._device_kind == "main" else f"{host}_{self._device_kind}")},
+            "name": self._device_name,
+            "manufacturer": "Ubiquiti",
+            "model": (self.coordinator.data or {}).get("device_model") or "Ubiquiti AirOS" if self._device_kind == "main" else (
+                f"{(self.coordinator.data or {}).get('device_model') or 'AirOS'} Ethernet" if self._device_kind == "ethernet" else
+                f"{(self.coordinator.data or {}).get('device_model') or 'AirOS'} Wireless"
+            ),
+        }
+        if self._device_kind != "main":
+            info["via_device_id"] = self._parent_device_id
+        return DeviceInfo(**info)
 
     @property
     def native_value(self):
-        value = (self.coordinator.data or {}).get(self.key)
-        if value is None:
+        if self._static_value is not None:
+            return self._static_value
+        return (self.coordinator.data or {}).get(self.key)
+
+    @property
+    def extra_state_attributes(self):
+        data = self.coordinator.data or {}
+        if self.key == "ram_usage_percent":
+            return {
+                key: data[key]
+                for key in ("mem_total_bytes", "mem_free_bytes", "mem_available_bytes")
+                if data.get(key) is not None
+            }
+        if self.key != "firmware_upgrade":
             return None
-        if isinstance(value, bool):
-            return value
-        if isinstance(value, (int, float)):
-            return value
-        if self.key in {
-            "signal", "noise", "ccq", "snr", "wlanTxRate", "wlanRxRate",
-            "frequency", "uptime_seconds", "channel", "ack", "rstatus",
-            "err_nwids", "err_crypts", "err_frags", "err_retries",
-            "err_beacons", "err_misc", "lan_rxbytes", "lan_rxpackets",
-            "lan_rxerrors", "lan_txbytes", "lan_txpackets", "lan_txerrors",
-            "wlan_rxbytes", "wlan_rxpackets", "wlan_rxerrors", "wlan_txbytes",
-            "wlan_txpackets", "wlan_txerrors", "ppp_rxbytes", "ppp_rxpackets",
-            "ppp_rxerrors", "ppp_txbytes", "ppp_txpackets", "ppp_txerrors",
-        }:
-            try:
-                return float(value)
-            except (TypeError, ValueError):
-                return None
-        return str(value)[:255]
+        return {
+            key.removeprefix("firmware_upgrade_"): data[key]
+            for key in (
+                "firmware_upgrade_installed_version",
+                "firmware_upgrade_latest_version",
+                "firmware_upgrade_reason",
+                "firmware_upgrade_source",
+            )
+            if data.get(key) is not None
+        }
