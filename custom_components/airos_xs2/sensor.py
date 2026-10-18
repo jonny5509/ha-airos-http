@@ -67,8 +67,33 @@ SENSORS = {
 }
 
 
+# Explicit labels for alternate keys and fields shared with the SSH integration.
+SENSOR_NAME_OVERRIDES = {
+    "wmac": "Wireless MAC Address",
+    "ethernet_mac": "Ethernet MAC Address",
+    "ethernet_interface_state": "Ethernet Interface State",
+    "wireless_interface_state": "Wireless Interface State",
+    "wireless_mac": "Wireless MAC Address",
+    "mode": "Wireless Mode",
+    "cpu_model": "CPU Model",
+    "cpu_usage": "CPU Usage",
+    "firmware_upgrade": "Firmware Upgrade",
+    "ram_usage_percent": "RAM Usage",
+    "ethernet_rx_bytes": "LAN Received Data",
+    "ethernet_tx_bytes": "LAN Transmitted Data",
+    "wireless_rx_bytes": "Wireless Received Data",
+    "wireless_tx_bytes": "Wireless Transmitted Data",
+    "deviceId": "Device ID",
+    "firmwareVersion": "Firmware Version",
+    "platform": "Platform",
+    "deviceIp": "Configured Device IP Address",
+}
+
+
 def _friendly_name(key):
     """Create a readable label for unrecognised scalar fields."""
+    if key in SENSOR_NAME_OVERRIDES:
+        return SENSOR_NAME_OVERRIDES[key]
     return key.replace("_", " ").replace("-", " ").strip().title()
 
 
