@@ -80,8 +80,6 @@ def _friendly_name(key):
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]
     data = coordinator.data or {}
-    entities = []
-
     # Ensure the parent radio device exists before creating interface devices.
     device_registry = dr.async_get(hass)
     parent_device = device_registry.async_get_or_create(
