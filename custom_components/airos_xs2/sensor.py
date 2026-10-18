@@ -22,7 +22,7 @@ SENSORS = {
     "snr": ("Wireless SNR", "dB", None, None),
     "wlanTxRate": ("Wireless Transmit Rate", UnitOfDataRate.MEGABITS_PER_SECOND, None, None),
     "wlanRxRate": ("Wireless Receive Rate", UnitOfDataRate.MEGABITS_PER_SECOND, None, None),
-    "essid": ("Wireless Network Name", None, None, None),
+    "essid": ("Wireless Network Name (SSID)", None, None, None),
     "frequency": ("Wireless Frequency", "MHz", None, None),
     "wlanMac": ("Wireless MAC Address", None, None, None),
     "wip": ("Wireless IP Address", None, None, None),
