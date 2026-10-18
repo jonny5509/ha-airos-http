@@ -114,13 +114,13 @@ SENSOR_NAME_OVERRIDES = {
     "err_misc": "Wireless Other Errors",
     "lmac": "Ethernet MAC Address",
     "lip": "Ethernet IP Address",
-    "lan_state": "LAN State",
-    "lan_rxbytes": "LAN Received Data",
-    "lan_rxpackets": "LAN Received Packets",
-    "lan_rxerrors": "LAN Receive Errors",
-    "lan_txbytes": "LAN Transmitted Data",
-    "lan_txpackets": "LAN Transmitted Packets",
-    "lan_txerrors": "LAN Transmit Errors",
+    "lan_state": "Ethernet Interface State",
+    "lan_rxbytes": "Ethernet Received Data",
+    "lan_rxpackets": "Ethernet Received Packets",
+    "lan_rxerrors": "Ethernet Receive Errors",
+    "lan_txbytes": "Ethernet Transmitted Data",
+    "lan_txpackets": "Ethernet Transmitted Packets",
+    "lan_txerrors": "Ethernet Transmit Errors",
     "wlan_rxbytes": "Wireless Received Data",
     "wlan_rxpackets": "Wireless Received Packets",
     "wlan_rxerrors": "Wireless Receive Errors",
@@ -270,7 +270,8 @@ def _device_kind(key):
         return "main"
 
     if (
-        normalized.startswith(("lan_", "ethernet_", "eth"))
+        normalized.startswith(("ethernet", "eth"))
+        or re.sub(r"[^a-z0-9]", "", normalized).startswith(("lanstate", "lanrx", "lantx", "lanmac", "lanip"))
         or key in {"lmac", "lip", "lan_state", "ethernet_mac", "ethernet_interface_state", "ethernet_rx_bytes", "ethernet_tx_bytes"}
     ):
         return "ethernet"
