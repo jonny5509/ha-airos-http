@@ -71,9 +71,15 @@ def _normalise(data):
         "mac": ("mac", "devicemac", "device_mac", "lmac"),
         "ip_address": ("ip_address", "deviceip", "ipaddr", "lan_ip", "lip"),
         "uptime_seconds": ("uptime_seconds", "uptime", "system_uptime"),
+        "firmwareVersion": ("firmwareversion", "firmware_version", "firmware_version_string"),
     }
     lookup = {re.sub(r"[^a-z0-9]", "", str(k).lower()): v for k, v in data.items()}
     result = dict(data)
+    # Collapse firmware-version spelling/capitalization variants to one stable key.
+    for raw_key in list(result):
+        if re.sub(r"[^a-z0-9]", "", str(raw_key).lower()) == "firmwareversion" and raw_key != "firmwareVersion":
+            result.setdefault("firmwareVersion", result[raw_key])
+            result.pop(raw_key, None)
     for target, candidates in aliases.items():
         for candidate in candidates:
             value = lookup.get(re.sub(r"[^a-z0-9]", "", candidate))
@@ -130,12 +136,13 @@ def _identify_device(data, extra_output=""):
     else:
         # deviceId is often the vendor string "UBNT", not a hardware model.
         # Never promote generic vendor labels to Home Assistant's model field.
+        values_by_key = {str(key).lower(): value for key, value in data.items()}
         for key in ("platform", "board", "boardname", "board_name", "product", "productname", "model", "devicemodel", "hardware", "cpu_model"):
-            value = data.get(key)
+            value = values_by_key.get(key)
             if not value:
                 continue
             candidate = str(value).strip()
-            if candidate and candidate.lower() not in {"ubnt", "ubiquiti", "unknown", "air os", "airos"}:
+            if candidate and candidate.lower() not in {"ubnt", "ubiquiti", "unknown", "air os", "airos", "ubiquiti airos"}:
                 data["device_model"] = candidate
                 break
         else:
