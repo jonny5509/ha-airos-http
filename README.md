@@ -37,6 +37,23 @@ Only sensors represented in the HTTP response can be populated. CPU usage, memor
 - Plain HTTP does not encrypt credentials or status data. Keep management access on a trusted LAN or VPN and do not expose it to the public internet.
 - If HACS tries to download a URL under `/archive/refs/heads/<short-commit>.zip`, it is treating a commit ID as a branch name. Remove the stale custom repository entry, add the canonical repository URL above, and choose the `main` branch if prompted.
 
+## Integration logo
+
+The HTTP and SSH integrations use the same AirOS brand images so they look consistent in Home Assistant. The PNG assets are stored in `custom_components/airos_xs2/brand/`:
+
+- `icon.png` — 256 × 256 px
+- `icon@2x.png` — 512 × 512 px
+
+## Screenshots
+
+These screenshots are shared with the SSH integration and illustrate the Home Assistant integration/device presentation.
+
+![Overview](docs/screenshots/Screenshot1.png)
+
+![Coop Radio](docs/screenshots/Screenshot2.png)
+
+![Shed Radio](docs/screenshots/Screenshot3.png)
+
 ## Firmware
 
 The integration recognizes `4.0.4.5074` as the target NanoStation5 release for its firmware comparison. Verify the hardware model before applying firmware to any device.
