@@ -94,7 +94,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, entry.data["host"])},
         manufacturer="Ubiquiti",
-        model=_registered_model(coordinator, identifiers),
+        model=_registered_model(coordinator, {(DOMAIN, entry.data["host"])}),
         name=entry.data["name"],
         configuration_url=coordinator.host.rstrip("/"),
     )
