@@ -101,6 +101,20 @@ async def async_setup_entry(hass, entry, async_add_entities):
         configuration_url=coordinator.host.rstrip("/"),
     )
 
+    # Register both interface devices even if a firmware response has no
+    # optional interface metrics yet. They remain children of the main radio.
+    host = entry.data["host"]
+    for suffix, label in (("_ethernet", "Ethernet"), ("_wireless", "Wireless")):
+        device_registry.async_get_or_create(
+            config_entry_id=entry.entry_id,
+            identifiers={(DOMAIN, f"{host}{suffix}")},
+            manufacturer="Ubiquiti",
+            model=_registered_model(coordinator, {(DOMAIN, f"{host}{suffix}")}),
+            name=f"{entry.data['name']} {label}",
+            configuration_url=coordinator.host.rstrip("/"),
+            via_device_id=parent_device.id,
+        )
+
     # Keep the parent registry model in sync if hardware identification appears
     # only after a later successful poll.
     def _update_registered_device_model():
