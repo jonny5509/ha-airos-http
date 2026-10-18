@@ -122,27 +122,19 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         host = entry.data["host"]
         wireless_keys = {
             "signal", "noise", "ccq", "snr", "wlanTxRate", "wlanRxRate",
-            "essid", "frequency", "wlanMac", "apmac", "channel", "security",
-            "qos", "antenna", "ack", "rstatus", "err_nwids", "err_crypts",
-            "err_frags", "err_retries", "err_beacons", "err_misc",
-            "wlan_rxbytes", "wlan_rxpackets", "wlan_rxerrors",
-            "wlan_txbytes", "wlan_txpackets", "wlan_txerrors",
+            "essid", "frequency", "wlanMac", "wip", "apmac", "channel",
+            "security", "qos", "antenna", "ack", "rstatus", "err_nwids",
+            "err_crypts", "err_frags", "err_retries", "err_beacons", "err_misc",
         }
-        if key in wireless_keys or key in {"wmac", "wip"} or key.lower().startswith(("wlan_", "wireless_")):
+        normalized_key = key.lower()
+        if key in wireless_keys or normalized_key.startswith(("wlan_", "wireless_")) or normalized_key in {"wlanmac", "wlan_ip_address"}:
             device_id = f"{host}_wireless"
             device_name = f"{entry.data['name']} Wireless"
             identifiers = {(DOMAIN, device_id)}
             via_device = True
-        elif key in {"mac", "ip_address", "lmac", "lip", "lan_state"} or key.lower().startswith("lan_"):
-            # lmac/lip are Ethernet-interface identifiers.
+        elif key in {"lmac", "lip"} or normalized_key.startswith("lan_"):
             device_id = f"{host}_ethernet"
             device_name = f"{entry.data['name']} Ethernet"
-            identifiers = {(DOMAIN, device_id)}
-            via_device = True
-        elif key in {"wlanMac", "wlan_ip_address"}:
-            # wmac and wip are wireless-interface identifiers.
-            device_id = f"{host}_wireless"
-            device_name = f"{entry.data['name']} Wireless"
             identifiers = {(DOMAIN, device_id)}
             via_device = True
         else:
@@ -151,8 +143,10 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             via_device = False
 
         via_device_id = parent_device_id if via_device else None
+        self._parent_device_id = parent_device_id
         self._target_device_identifiers = identifiers
         self._target_via_device_id = via_device_id
+        self._target_device_name = device_name
         self._target_device_name = device_name
         self._entry_id = entry.entry_id
         self._attr_device_info = DeviceInfo(
@@ -167,23 +161,25 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
     async def async_added_to_hass(self):
         """Ensure child devices exist and migrate existing entity assignments."""
         await super().async_added_to_hass()
-        if self._target_via_device_id is None:
-            return
-
         device_registry = dr.async_get(self.hass)
-        device = device_registry.async_get_or_create(
-            config_entry_id=self._entry_id,
-            identifiers=self._target_device_identifiers,
-            manufacturer="Ubiquiti",
-            model="NanoStation5 / airOS 4.x",
-            name=self._target_device_name,
-            configuration_url=self.coordinator.host.rstrip("/"),
-            via_device_id=self._target_via_device_id,
-        )
+        if self._target_via_device_id is None:
+            target_device_id = self._parent_device_id
+        else:
+            device = device_registry.async_get_or_create(
+                config_entry_id=self._entry_id,
+                identifiers=self._target_device_identifiers,
+                manufacturer="Ubiquiti",
+                model="NanoStation5 / airOS 4.x",
+                name=self._target_device_name,
+                configuration_url=self.coordinator.host.rstrip("/"),
+                via_device_id=self._target_via_device_id,
+            )
+            target_device_id = device.id
+
         entity_registry = er.async_get(self.hass)
         entity_entry = entity_registry.async_get(self.entity_id)
-        if entity_entry is not None and entity_entry.device_id != device.id:
-            entity_registry.async_update_entity(self.entity_id, device_id=device.id)
+        if entity_entry is not None and entity_entry.device_id != target_device_id:
+            entity_registry.async_update_entity(self.entity_id, device_id=target_device_id)
 
     @property
     def native_value(self):
