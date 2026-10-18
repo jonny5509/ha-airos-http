@@ -45,13 +45,13 @@ SENSORS = {
     "err_retries": ("Wireless Retries", None, None, SensorStateClass.TOTAL_INCREASING),
     "err_beacons": ("Wireless Beacon Errors", None, None, SensorStateClass.TOTAL_INCREASING),
     "err_misc": ("Wireless Other Errors", None, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_state": ("LAN State", None, None, None),
-    "lan_rxbytes": ("LAN Received Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_rxpackets": ("LAN Received Packets", None, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_rxerrors": ("LAN Receive Errors", None, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_txbytes": ("LAN Transmitted Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_txpackets": ("LAN Transmitted Packets", None, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_txerrors": ("LAN Transmit Errors", None, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_state": ("Ethernet Interface State", None, None, None),
+    "lan_rxbytes": ("Ethernet Received Data", UnitOfInformation.BYTES, SensorDeviceClass.DATA_SIZE, SensorStateClass.TOTAL_INCREASING),
+    "lan_rxpackets": ("Ethernet Received Packets", None, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_rxerrors": ("Ethernet Receive Errors", None, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_txbytes": ("Ethernet Transmitted Data", UnitOfInformation.BYTES, SensorDeviceClass.DATA_SIZE, SensorStateClass.TOTAL_INCREASING),
+    "lan_txpackets": ("Ethernet Transmitted Packets", None, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_txerrors": ("Ethernet Transmit Errors", None, None, SensorStateClass.TOTAL_INCREASING),
     "wlan_rxbytes": ("Wireless Received Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
     "wlan_rxpackets": ("Wireless Received Packets", None, None, SensorStateClass.TOTAL_INCREASING),
     "wlan_rxerrors": ("Wireless Receive Errors", None, None, SensorStateClass.TOTAL_INCREASING),
@@ -92,8 +92,8 @@ SENSOR_NAME_OVERRIDES = {
     "cpu_usage": "CPU Usage",
     "firmware_upgrade": "Firmware Upgrade",
     "ram_usage_percent": "RAM Usage",
-    "ethernet_rx_bytes": "LAN Received Data",
-    "ethernet_tx_bytes": "LAN Transmitted Data",
+    "ethernet_rx_bytes": "Ethernet Received Data",
+    "ethernet_tx_bytes": "Ethernet Transmitted Data",
     "wireless_rx_bytes": "Wireless Received Data",
     "wireless_tx_bytes": "Wireless Transmitted Data",
     "wip": "Wireless IP Address",
@@ -271,7 +271,7 @@ def _device_kind(key):
 
     if (
         normalized.startswith(("lan_", "ethernet_", "eth"))
-        or key in {"lmac", "lip", "lan_state"}
+        or key in {"lmac", "lip", "lan_state", "ethernet_mac", "ethernet_interface_state", "ethernet_rx_bytes", "ethernet_tx_bytes"}
     ):
         return "ethernet"
 
@@ -354,6 +354,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             "err_nwids", "err_crypts", "err_frags", "err_retries",
             "err_beacons", "err_misc", "lan_rxbytes", "lan_rxpackets",
             "lan_rxerrors", "lan_txbytes", "lan_txpackets", "lan_txerrors",
+            "ethernet_rx_bytes", "ethernet_tx_bytes",
             "wlan_rxbytes", "wlan_rxpackets", "wlan_rxerrors", "wlan_txbytes",
             "wlan_txpackets", "wlan_txerrors", "ppp_rxbytes", "ppp_rxpackets",
             "ppp_rxerrors", "ppp_txbytes", "ppp_txpackets", "ppp_txerrors",
