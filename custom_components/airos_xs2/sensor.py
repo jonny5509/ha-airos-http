@@ -74,7 +74,9 @@ def _friendly_name(key):
 
 def _registered_model(coordinator, identifiers):
     """Return the detected model, with interface suffixes for child devices."""
-    model = (coordinator.data or {}).get("device_model") or "Ubiquiti AirOS"
+    model = (coordinator.data or {}).get("device_model") or "Ubiquiti"
+    if str(model).strip().lower() in {"ubnt", "ubiquiti", "unknown", "air os", "airos", "ubiquiti airos"}:
+        model = "Ubiquiti"
     identifier_text = " ".join(str(value) for _, value in identifiers)
     if identifier_text.endswith("_ethernet"):
         return f"{model} Ethernet"
