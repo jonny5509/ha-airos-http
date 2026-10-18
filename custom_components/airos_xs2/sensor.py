@@ -165,7 +165,7 @@ def _device_kind(key):
         normalized.startswith(("wlan", "wireless_"))
         or key in {
             "signal", "noise", "ccq", "snr", "essid", "frequency",
-            "wlanTxRate", "wlanRxRate", "wlanMac", "wip", "apmac",
+            "wlanTxRate", "wlanRxRate", "wlanMac", "wmac", "wip", "apmac",
             "channel", "security", "qos", "antenna", "ack", "rstatus",
             "err_nwids", "err_crypts", "err_frags", "err_retries",
             "err_beacons", "err_misc",
