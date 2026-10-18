@@ -30,12 +30,28 @@ The integration uses the legacy `/login.cgi` form login and session cookies, the
 
 Only sensors represented in the HTTP response can be populated. CPU usage, memory and interface byte counters were previously collected from procfs over SSH, and are **not guaranteed** to be exposed by this HTTP interface. The code should be treated as an initial implementation until tested against the actual radio response.
 
+## Sensor and device layout
+
+The HTTP integration uses the same sensor definitions and entity grouping as the SSH variant. Home Assistant groups entities by the radio, Wireless interface, and Ethernet interface where applicable.
+
+Core radio metrics include signal, noise, CCQ, SNR, and wireless TX/RX rates. Optional fields include ESSID, frequency, interface state and MAC addresses, device IP, uptime, CPU, RAM, and interface byte counters when the HTTP status response provides them. Sensors whose values are not exposed by the device's HTTP endpoint may remain unavailable; the HTTP integration does not run SSH commands or read remote procfs.
+
+### UI reference screenshots
+
+These screenshots from the SSH variant illustrate the intended Home Assistant entity/device presentation. They are linked from the source repository rather than duplicated as binary assets.
+
+![AirOS overview](https://raw.githubusercontent.com/jonny5509/ha-airos-ssh/main/docs/screenshots/Screenshot1.png)
+
+![AirOS radio details](https://raw.githubusercontent.com/jonny5509/ha-airos-ssh/main/docs/screenshots/Screenshot2.png)
+
+![AirOS device details](https://raw.githubusercontent.com/jonny5509/ha-airos-ssh/main/docs/screenshots/Screenshot3.png)
+
 ## Troubleshooting
 
 - Confirm the radio's HTTP web interface is reachable from Home Assistant.
 - If sensors remain unavailable, inspect the response from `http://DEVICE-IP/status.cgi` after logging in. Legacy airOS versions may return HTML rather than JSON. Share a sample with passwords, cookies and other secrets removed so the parser can be adapted.
 - Plain HTTP does not encrypt credentials or status data. Keep management access on a trusted LAN or VPN and do not expose it to the public internet.
-- If HACS tries to download a URL under `/archive/refs/heads/<short-commit>.zip`, it is treating a commit ID as a branch name. Remove the stale custom repository entry, add the canonical repository URL above, and choose the `main` branch if prompted.
+- If HACS tries to download a URL under `/archive/refs/heads/<short-commit>.zip`, it is treating a commit ID as a branch name. Remove the stale custom repository entry, add the canonical URL above, and choose the `main` branch if prompted.
 
 ## Firmware
 
