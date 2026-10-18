@@ -239,6 +239,13 @@ async def async_setup_entry(hass, entry, async_add_entities):
     for key, value in data.items():
         if key in SENSORS or value is None or isinstance(value, (dict, list, tuple, set)):
             continue
+        # Several airOS releases expose the same wireless MAC under multiple
+        # raw keys. Keep the canonical Wireless MAC Address sensor only.
+        if key in {"wmac", "wlan_mac", "wireless_mac"} and data.get("wlanMac") not in (None, ""):
+            continue
+        # Prefer ethernet_mac over its legacy lmac alias when both are present.
+        if key == "lmac" and data.get("ethernet_mac") not in (None, ""):
+            continue
         entities.append(
             AirOSSensor(
                 coordinator, entry, key, parent_device.id, _friendly_name(key), None, None, None
