@@ -12,6 +12,8 @@ _AUTO_NAMES = {
     "air os",
     "ubiquiti airos",
     "ubiquiti airos (http)",
+    "ubnt",
+    "ubnt airos",
     "nanostation5",
 }
 
