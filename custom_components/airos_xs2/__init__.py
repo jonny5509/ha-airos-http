@@ -2,9 +2,9 @@
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, Platform
+from homeassistant.helpers.importlib import async_import_module
 
 from .const import DOMAIN
-from .coordinator import AiRXS2Coordinator
 
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.SWITCH]
 
@@ -22,7 +22,13 @@ _AUTO_NAMES = {
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up an AirOS device."""
-    coordinator = AiRXS2Coordinator(
+    # The coordinator imports HTTP/parsing dependencies. Load it via Home
+    # Assistant's import executor so legacy component setup cannot block the
+    # event loop while importing the integration dependency tree.
+    coordinator_module = await async_import_module(
+        hass, f"{__package__}.coordinator"
+    )
+    coordinator = coordinator_module.AiRXS2Coordinator(
         hass,
         entry.data["host"],
         entry.data["username"],
