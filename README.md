@@ -3,7 +3,7 @@
 **Canonical repository:** https://github.com/jonny5509/ha-airos-http  
 **Git clone URL:** https://github.com/jonny5509/ha-airos-http.git
 
-Home Assistant custom integration that uses **plain HTTP only** for all communication with the radio. It does not use SSH or HTTPS.
+Home Assistant custom integration that uses **plain HTTP only** for all communication with the radio. It does not use SSH or HTTPS. For the SSH-based variant, see [ha-airos-ssh](https://github.com/jonny5509/ha-airos-ssh).
 
 **Target firmware:** `XS5.ar2313.v4.0.4.5074.150724.1344` (legacy airOS 4.x).
 
@@ -37,9 +37,9 @@ Only sensors represented in the HTTP response can be populated. CPU usage, memor
 - Plain HTTP does not encrypt credentials or status data. Keep management access on a trusted LAN or VPN and do not expose it to the public internet.
 - If HACS tries to download a URL under `/archive/refs/heads/<short-commit>.zip`, it is treating a commit ID as a branch name. Remove the stale custom repository entry, add the canonical repository URL above, and choose the `main` branch if prompted.
 
-## Integration logo
+## Branding
 
-The HTTP and SSH integrations use the same AirOS brand images so they look consistent in Home Assistant. The PNG assets are stored in `custom_components/airos_xs2/brand/`:
+The HTTP and [SSH integration](https://github.com/jonny5509/ha-airos-ssh) share the same AirOS brand images for a consistent appearance in Home Assistant. The PNG assets are stored in `custom_components/airos_xs2/brand/`:
 
 - `icon.png` — 256 × 256 px
 - `icon@2x.png` — 512 × 512 px
