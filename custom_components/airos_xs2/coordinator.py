@@ -138,6 +138,10 @@ def _identify_device(data, extra_output=""):
             if candidate and candidate.lower() not in {"ubnt", "ubiquiti", "unknown", "air os", "airos"}:
                 data["device_model"] = candidate
                 break
+        else:
+            # Generic vendor identifiers are not hardware models. Always use
+            # the manufacturer name rather than exposing "UBNT" in Home Assistant.
+            data["device_model"] = "Ubiquiti"
 
 
 class AiRXS2Coordinator(DataUpdateCoordinator):
