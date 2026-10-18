@@ -107,7 +107,7 @@ def _identify_device(data, extra_output=""):
         "firmwareversion", "cpu_model",
     }
     parts = [extra_output]
-    for key, value in data.items():
+    for key, value in list(data.items()):
         if key.lower() in identity_keys:
             parts.append(str(value))
         # Older airOS versions bundle identity values into one string.
