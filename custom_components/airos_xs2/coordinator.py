@@ -128,10 +128,15 @@ def _identify_device(data, extra_output=""):
     elif re.search(r"nanostation\s*5|\bns5\b|\bxs5\b", identity, re.IGNORECASE) or "nanostation5" in compact or "xs5" in compact:
         data["device_model"] = "NanoStation5"
     else:
-        for key in ("platform", "deviceId", "board", "board_name", "product", "model", "cpu_model"):
+        # deviceId is often the vendor string "UBNT", not a hardware model.
+        # Never promote generic vendor labels to Home Assistant's model field.
+        for key in ("platform", "board", "boardname", "board_name", "product", "productname", "model", "devicemodel", "hardware", "cpu_model"):
             value = data.get(key)
-            if value and str(value).strip():
-                data["device_model"] = str(value).strip()
+            if not value:
+                continue
+            candidate = str(value).strip()
+            if candidate and candidate.lower() not in {"ubnt", "ubiquiti", "unknown", "air os", "airos"}:
+                data["device_model"] = candidate
                 break
 
 
