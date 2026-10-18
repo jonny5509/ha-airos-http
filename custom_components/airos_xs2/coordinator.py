@@ -99,6 +99,42 @@ def _normalise(data):
     return result
 
 
+def _identify_device(data):
+    """Infer the hardware model from identity metadata exposed over HTTP."""
+    identity_keys = {
+        "platform", "deviceid", "board", "boardname", "board_name",
+        "product", "productname", "model", "devicemodel", "hardware",
+        "firmwareversion", "cpu_model",
+    }
+    parts = []
+    for key, value in data.items():
+        if key.lower() in identity_keys:
+            parts.append(str(value))
+        # Older airOS versions bundle identity values into one string.
+        if key.lower() in {"side_devicename", "devicename", "device_name"}:
+            raw = str(value)
+            parts.append(raw)
+            for match in re.finditer(
+                r"(deviceId|firmwareVersion|platform|deviceIp|board|product|model)\\s*=\\s*([^,;]+)",
+                raw,
+                re.IGNORECASE,
+            ):
+                data.setdefault(match.group(1), match.group(2).strip())
+
+    identity = " ".join(parts)
+    compact = re.sub(r"[^a-z0-9]", "", identity.lower())
+    if re.search(r"nanostation\\s*2|\\bns2\\b|\\bxs2\\b", identity, re.IGNORECASE) or "nanostation2" in compact or "xs2" in compact:
+        data["device_model"] = "NanoStation2"
+    elif re.search(r"nanostation\\s*5|\\bns5\\b|\\bxs5\\b", identity, re.IGNORECASE) or "nanostation5" in compact or "xs5" in compact:
+        data["device_model"] = "NanoStation5"
+    else:
+        for key in ("platform", "deviceId", "board", "board_name", "product", "model", "cpu_model"):
+            value = data.get(key)
+            if value and str(value).strip():
+                data["device_model"] = str(value).strip()
+                break
+
+
 class AiRXS2Coordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, host, username, password, name):
         self.host = "http://" + host.removeprefix("https://").removeprefix("http://").strip("/").rstrip("/") + "/"
@@ -208,6 +244,7 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
             flattened = {}
             _flatten(parsed, flattened)
             result = _normalise(flattened)
+            _identify_device(result)
 
             # airOS 4 exposes the configured hostname on system.cgi, not status.cgi.
             try:
@@ -229,6 +266,7 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
                 # Status sensors remain available if the optional settings page fails.
                 pass
 
+            _identify_device(result)
             return result
         except UpdateFailed:
             raise
