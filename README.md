@@ -57,3 +57,7 @@ These screenshots are shared with the SSH integration and illustrate the Home As
 ## Firmware
 
 The integration recognizes `4.0.4.5074` as the target NanoStation5 release for its firmware comparison. Verify the hardware model before applying firmware to any device.
+
+## License
+
+[MIT License](LICENSE)
