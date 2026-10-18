@@ -26,6 +26,8 @@ SENSORS = {
     "frequency": ("Wireless Frequency", "MHz", None, None),
     "wlanMac": ("Wireless MAC Address", None, None, None),
     "wip": ("Wireless IP Address", None, None, None),
+    "wlan_ip": ("Wireless IP Address", None, None, None),
+    "wlan_state": ("Wireless State", None, None, None),
     "mac": ("Device MAC Address", None, None, None),
     "ip_address": ("Device IP Address", None, None, None),
     "hostname": ("Hostname", None, None, None),
@@ -45,6 +47,8 @@ SENSORS = {
     "err_beacons": ("Wireless Beacon Errors", None, None, SensorStateClass.TOTAL_INCREASING),
     "err_misc": ("Wireless Other Errors", None, None, SensorStateClass.TOTAL_INCREASING),
     "lan_state": ("LAN State", None, None, None),
+    "lmac": ("Ethernet MAC Address", None, None, None),
+    "lip": ("Ethernet IP Address", None, None, None),
     "lan_rxbytes": ("LAN Received Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
     "lan_rxpackets": ("LAN Received Packets", None, None, SensorStateClass.TOTAL_INCREASING),
     "lan_rxerrors": ("LAN Receive Errors", None, None, SensorStateClass.TOTAL_INCREASING),
@@ -58,6 +62,7 @@ SENSORS = {
     "wlan_txpackets": ("Wireless Transmitted Packets", None, None, SensorStateClass.TOTAL_INCREASING),
     "wlan_txerrors": ("Wireless Transmit Errors", None, None, SensorStateClass.TOTAL_INCREASING),
     "ppp_ip": ("PPP IP Address", None, None, None),
+    "ppp_state": ("PPP State", None, None, None),
     "ppp_rxbytes": ("PPP Received Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
     "ppp_rxpackets": ("PPP Received Packets", None, None, SensorStateClass.TOTAL_INCREASING),
     "ppp_rxerrors": ("PPP Receive Errors", None, None, SensorStateClass.TOTAL_INCREASING),
@@ -127,7 +132,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             "err_crypts", "err_frags", "err_retries", "err_beacons", "err_misc",
         }
         normalized_key = key.lower()
-        if key in wireless_keys or normalized_key.startswith(("wlan_", "wireless_")) or normalized_key in {"wlanmac", "wlan_ip_address"}:
+        if key in wireless_keys or normalized_key.startswith(("wlan", "wireless")) or normalized_key in {"wlanmac", "wlan_ip_address"}:
             device_id = f"{host}_wireless"
             device_name = f"{entry.data['name']} Wireless"
             identifiers = {(DOMAIN, device_id)}
@@ -135,6 +140,11 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         elif key in {"lmac", "lip"} or normalized_key.startswith("lan_"):
             device_id = f"{host}_ethernet"
             device_name = f"{entry.data['name']} Ethernet"
+            identifiers = {(DOMAIN, device_id)}
+            via_device = True
+        elif normalized_key.startswith("ppp_"):
+            device_id = host + "_ppp"
+            device_name = entry.data["name"] + " PPP"
             identifiers = {(DOMAIN, device_id)}
             via_device = True
         else:
