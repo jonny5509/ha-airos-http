@@ -19,10 +19,12 @@ class AiRXS2ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema({
-                vol.Required("name", default="NanoStation5"): str,
-                vol.Required("host", description={"suggested_value": "http://192.168.1.20"}): str,
-                vol.Required("username"): str,
-                vol.Required("password"): str,
-            }),
+            data_schema=vol.Schema(
+                {
+                    vol.Required("name"): str,
+                    vol.Required("host"): str,
+                    vol.Required("username"): str,
+                    vol.Required("password"): str,
+                }
+            ),
         )
