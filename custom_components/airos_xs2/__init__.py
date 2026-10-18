@@ -1,7 +1,8 @@
 """Set up the Ubiquiti AirOS HTTP integration."""
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, Platform
+from homeassistant.const import Platform
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.importlib import async_import_module
 
 from .const import DOMAIN
