@@ -111,7 +111,7 @@ def _extract_firmware_version(text):
     if not text:
         return None
     patterns = (
-        r"(?:firmwareVersion|firmware_version|firmware version|firmware-version)\s*[=:]\s*[\\"']?([^\s,;\\"'<>]+)",
+        r"""(?:firmwareVersion|firmware_version|firmware version|firmware-version)\s*[=:]\s*["']?([^\s,;"'<>]+)""",
         r"firmware(?:\s+version)?\s*</?[^>]*>\s*(?:</?[^>]*>\s*)*([vV]?\d+\.\d+\.\d+(?:\.\d+)?)",
         r"firmware(?:\s+version)?\s*[:=]\s*([vV]?\d+\.\d+\.\d+(?:\.\d+)?)",
     )
