@@ -142,8 +142,38 @@ async def async_setup_entry(hass, entry, async_add_entities):
     async_add_entities(entities)
 
 
+def _device_kind(key):
+    """Return which Home Assistant device should own a sensor."""
+    normalized = key.lower()
+
+    # Check wireless first: "wlan" contains "lan".
+    if (
+        normalized.startswith(("wlan", "wireless_"))
+        or key in {
+            "signal", "noise", "ccq", "snr", "essid", "frequency",
+            "wlanTxRate", "wlanRxRate", "wlanMac", "wip", "apmac",
+            "channel", "security", "qos", "antenna", "ack", "rstatus",
+            "err_nwids", "err_crypts", "err_frags", "err_retries",
+            "err_beacons", "err_misc",
+        }
+    ):
+        return "wireless"
+
+    # Device-wide MAC/IP and uptime remain on the main radio device.
+    if key in {"mac", "ip_address", "hostname", "uptime_seconds", "date_time"}:
+        return "main"
+
+    if (
+        normalized.startswith(("lan_", "ethernet_", "eth"))
+        or key in {"lmac", "lip", "lan_state"}
+    ):
+        return "ethernet"
+
+    return "main"
+
+
 class AirOSSensor(CoordinatorEntity, SensorEntity):
-    # Match the SSH integration: include the device name in the entity name.
+    # Match the SSH integration: include the configured device name in the entity name.
     _attr_has_entity_name = False
 
     def __init__(self, coordinator, entry, key, parent_device_id, label, unit, device_class, state_class):
@@ -154,66 +184,49 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         self._attr_native_unit_of_measurement = unit
         self._attr_device_class = device_class
         self._attr_state_class = state_class
-        host = entry.data["host"]
-        wireless_keys = {
-            "signal", "noise", "ccq", "snr", "wlanTxRate", "wlanRxRate",
-            "essid", "frequency", "wlanMac", "apmac", "channel", "security",
-            "qos", "antenna", "ack", "rstatus", "err_nwids", "err_crypts",
-            "err_frags", "err_retries", "err_beacons", "err_misc",
-            "wlan_rxbytes", "wlan_rxpackets", "wlan_rxerrors",
-            "wlan_txbytes", "wlan_txpackets", "wlan_txerrors",
-        }
-        if key in wireless_keys or key in {"wmac", "wip"} or key.lower().startswith(("wlan_", "wireless_")):
-            device_id = f"{host}_wireless"
-            device_name = f"{entry.data['name']} Wireless"
-            identifiers = {(DOMAIN, device_id)}
-            via_device = True
-        elif key in {"mac", "ip_address", "lmac", "lip", "lan_state"} or key.lower().startswith("lan_"):
-            # lmac/lip are Ethernet-interface identifiers.
-            device_id = f"{host}_ethernet"
-            device_name = f"{entry.data['name']} Ethernet"
-            identifiers = {(DOMAIN, device_id)}
-            via_device = True
-        elif key in {"wlanMac", "wlan_ip_address"}:
-            # wmac and wip are wireless-interface identifiers.
-            device_id = f"{host}_wireless"
-            device_name = f"{entry.data['name']} Wireless"
-            identifiers = {(DOMAIN, device_id)}
-            via_device = True
-        else:
-            device_name = entry.data["name"]
-            identifiers = {(DOMAIN, host)}
-            via_device = False
 
-        via_device_id = parent_device_id if via_device else None
-        self._target_device_identifiers = identifiers
-        self._target_via_device_id = via_device_id
-        self._target_device_name = device_name
+        host = entry.data["host"]
         self._entry_id = entry.entry_id
+        self._parent_device_id = parent_device_id
+        self._device_kind = _device_kind(key)
+
+        if self._device_kind == "ethernet":
+            self._device_identifiers = {(DOMAIN, f"{host}_ethernet")}
+            self._device_name = f"{entry.data['name']} Ethernet"
+            self._via_device_id = parent_device_id
+        elif self._device_kind == "wireless":
+            self._device_identifiers = {(DOMAIN, f"{host}_wireless")}
+            self._device_name = f"{entry.data['name']} Wireless"
+            self._via_device_id = parent_device_id
+        else:
+            self._device_identifiers = {(DOMAIN, host)}
+            self._device_name = entry.data["name"]
+            self._via_device_id = None
+
         self._attr_device_info = DeviceInfo(
-            identifiers=identifiers,
-            via_device_id=via_device_id,
+            identifiers=self._device_identifiers,
+            via_device_id=self._via_device_id,
             manufacturer="Ubiquiti",
-            model=_registered_model(coordinator, identifiers),
-            name=device_name,
+            model=_registered_model(coordinator, self._device_identifiers),
+            name=self._device_name,
             configuration_url=coordinator.host.rstrip("/"),
         )
 
     async def async_added_to_hass(self):
-        """Ensure child devices exist and migrate existing entity assignments."""
+        """Create child devices and migrate existing entities to their proper device."""
         await super().async_added_to_hass()
-        if self._target_via_device_id is None:
+        if self._device_kind == "main":
             return
 
         device_registry = dr.async_get(self.hass)
         device = device_registry.async_get_or_create(
             config_entry_id=self._entry_id,
-            identifiers=self._target_device_identifiers,
+            identifiers=self._device_identifiers,
             manufacturer="Ubiquiti",
-            model=_registered_model(self.coordinator, self._target_device_identifiers),
-            name=self._target_device_name,
+            model=_registered_model(self.coordinator, self._device_identifiers),
+            name=self._device_name,
             configuration_url=self.coordinator.host.rstrip("/"),
-            via_device_id=self._target_via_device_id,
+            via_device_id=self._parent_device_id,
         )
         entity_registry = er.async_get(self.hass)
         entity_entry = entity_registry.async_get(self.entity_id)
