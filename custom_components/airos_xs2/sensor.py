@@ -93,24 +93,24 @@ async def async_setup_entry(hass, entry, async_add_entities):
         configuration_url=coordinator.host.rstrip("/"),
     )
 
-    # First add known sensors with units and device classes.
-    for key, description in SENSORS.items():
-        if key in data and data[key] is not None:
-            entities.append(AirOSSensor(coordinator, entry, key, parent_device.id, *description))
+    # Expose every scalar field currently returned, using richer metadata for
+    # known fields and a friendly-name fallback for firmware-specific fields.
+    known_keys = set()
 
-    # Also expose every additional scalar field found in the HTTP responses.
-    # This deliberately makes discovery broad so users can decide which raw
-    # firmware-specific sensors they want to keep or disable later.
-    for key, value in data.items():
-        if key in SENSORS or value is None or isinstance(value, (dict, list, tuple, set)):
-            continue
-        entities.append(
-            AirOSSensor(
-                coordinator, entry, key, parent_device.id, _friendly_name(key), None, None, None
-            )
-        )
+    def add_new_sensors():
+        current_data = coordinator.data or {}
+        new_entities = []
+        for key, value in current_data.items():
+            if key in known_keys or value is None or isinstance(value, (dict, list, tuple, set)):
+                continue
+            description = SENSORS.get(key, (_friendly_name(key), None, None, None))
+            new_entities.append(AirOSSensor(coordinator, entry, key, parent_device.id, *description))
+            known_keys.add(key)
+        if new_entities:
+            async_add_entities(new_entities)
 
-    async_add_entities(entities)
+    add_new_sensors()
+    entry.async_on_unload(coordinator.async_add_listener(add_new_sensors))
 
 
 class AirOSSensor(CoordinatorEntity, SensorEntity):
