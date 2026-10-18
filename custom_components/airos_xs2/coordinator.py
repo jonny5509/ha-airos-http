@@ -105,6 +105,25 @@ def _normalise(data):
     return result
 
 
+
+def _extract_firmware_version(text):
+    """Extract a firmware build from legacy airOS pages when status.cgi omits it."""
+    if not text:
+        return None
+    patterns = (
+        r"""(?:firmwareVersion|firmware_version|firmware version|firmware-version)\s*[=:]\s*["']?([^\s,;"'<>]+)""",
+        r"firmware(?:\s+version)?\s*</?[^>]*>\s*(?:</?[^>]*>\s*)*([vV]?\d+\.\d+\.\d+(?:\.\d+)?)",
+        r"firmware(?:\s+version)?\s*[:=]\s*([vV]?\d+\.\d+\.\d+(?:\.\d+)?)",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            value = match.group(1).strip().rstrip(".,")
+            if re.search(r"\d+\.\d+", value):
+                return value
+    return None
+
+
 def _identify_device(data, extra_output=""):
     """Infer the hardware model from airOS metadata and system-page text."""
     identity_keys = {
@@ -265,6 +284,12 @@ class AiRXS2Coordinator(DataUpdateCoordinator):
             # airOS 4 exposes the configured hostname on system.cgi, not status.cgi.
             try:
                 system_page = await self._request("system.cgi")
+                # Some XS5/airOS 4 builds expose firmware only on system.cgi,
+                # not in status.cgi. Extract it before sensor entities are created.
+                if not result.get("firmwareVersion"):
+                    firmware_version = _extract_firmware_version(system_page)
+                    if firmware_version:
+                        result["firmwareVersion"] = firmware_version
                 hostname_input = re.search(
                     r"""<input\b(?=[^>]*\b(?:name|id)\s*=\s*["']hostname["'])[^>]*>""",
                     system_page,
