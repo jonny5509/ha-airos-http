@@ -1,4 +1,5 @@
 """Sensors populated by the airOS HTTP status endpoint."""
+import re
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -69,12 +70,24 @@ SENSORS = {
 
 # Explicit labels for alternate keys and fields shared with the SSH integration.
 SENSOR_NAME_OVERRIDES = {
-    "wmac": "Wireless MAC Address",
+    "signal": "Wireless Signal",
+    "noise": "Wireless Noise",
+    "ccq": "Wireless CCQ",
+    "snr": "Wireless SNR",
+    "wlanTxRate": "Wireless Transmit Rate",
+    "wlanRxRate": "Wireless Receive Rate",
+    "wlanMac": "Wireless MAC Address",
+    "wireless_mac": "Wireless MAC Address",
     "ethernet_mac": "Ethernet MAC Address",
     "ethernet_interface_state": "Ethernet Interface State",
     "wireless_interface_state": "Wireless Interface State",
-    "wireless_mac": "Wireless MAC Address",
+    "mac": "Device MAC Address",
+    "essid": "Wireless Network Name (SSID)",
+    "frequency": "Wireless Frequency",
     "mode": "Wireless Mode",
+    "hostname": "Hostname",
+    "uptime_seconds": "Uptime",
+    "ip_address": "Device IP Address",
     "cpu_model": "CPU Model",
     "cpu_usage": "CPU Usage",
     "firmware_upgrade": "Firmware Upgrade",
@@ -83,6 +96,44 @@ SENSOR_NAME_OVERRIDES = {
     "ethernet_tx_bytes": "LAN Transmitted Data",
     "wireless_rx_bytes": "Wireless Received Data",
     "wireless_tx_bytes": "Wireless Transmitted Data",
+    "wip": "Wireless IP Address",
+    "wmac": "Wireless MAC Address",
+    "apmac": "Access Point MAC Address",
+    "channel": "Wireless Channel",
+    "date_time": "Radio Date and Time",
+    "security": "Wireless Security",
+    "qos": "Wireless QoS",
+    "antenna": "Antenna Polarization",
+    "ack": "ACK Distance",
+    "rstatus": "Wireless Radio Status Code",
+    "err_nwids": "Wireless Invalid Network IDs",
+    "err_crypts": "Wireless Crypto Errors",
+    "err_frags": "Wireless Fragment Errors",
+    "err_retries": "Wireless Retries",
+    "err_beacons": "Wireless Beacon Errors",
+    "err_misc": "Wireless Other Errors",
+    "lmac": "Ethernet MAC Address",
+    "lip": "Ethernet IP Address",
+    "lan_state": "LAN State",
+    "lan_rxbytes": "LAN Received Data",
+    "lan_rxpackets": "LAN Received Packets",
+    "lan_rxerrors": "LAN Receive Errors",
+    "lan_txbytes": "LAN Transmitted Data",
+    "lan_txpackets": "LAN Transmitted Packets",
+    "lan_txerrors": "LAN Transmit Errors",
+    "wlan_rxbytes": "Wireless Received Data",
+    "wlan_rxpackets": "Wireless Received Packets",
+    "wlan_rxerrors": "Wireless Receive Errors",
+    "wlan_txbytes": "Wireless Transmitted Data",
+    "wlan_txpackets": "Wireless Transmitted Packets",
+    "wlan_txerrors": "Wireless Transmit Errors",
+    "ppp_ip": "PPP IP Address",
+    "ppp_rxbytes": "PPP Received Data",
+    "ppp_rxpackets": "PPP Received Packets",
+    "ppp_rxerrors": "PPP Receive Errors",
+    "ppp_txbytes": "PPP Transmitted Data",
+    "ppp_txpackets": "PPP Transmitted Packets",
+    "ppp_txerrors": "PPP Transmit Errors",
     "deviceId": "Device ID",
     "firmwareVersion": "Firmware Version",
     "platform": "Platform",
@@ -91,10 +142,26 @@ SENSOR_NAME_OVERRIDES = {
 
 
 def _friendly_name(key):
-    """Create a readable label for unrecognised scalar fields."""
+    """Return a readable, consistently capitalized name for a sensor key."""
     if key in SENSOR_NAME_OVERRIDES:
         return SENSOR_NAME_OVERRIDES[key]
-    return key.replace("_", " ").replace("-", " ").strip().title()
+
+    # Convert camelCase and separators into words before applying protocol terms.
+    name = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", key)
+    name = re.sub(r"[_-]+", " ", name).strip()
+    words = name.split()
+    normalized = []
+    for word in words:
+        lower = word.lower()
+        if lower in {"wlan", "wireless", "wifi"}:
+            normalized.append("Wireless")
+        elif lower in {"lan", "ethernet", "eth"}:
+            normalized.append("Ethernet")
+        elif lower in {"mac", "ip", "cpu", "ccq", "snr", "ssid", "tx", "rx", "mhz", "dbm", "id", "url", "ram"}:
+            normalized.append(lower.upper())
+        else:
+            normalized.append(lower.capitalize())
+    return " ".join(normalized) or "Unknown"
 
 
 def _registered_model(coordinator, identifiers):
