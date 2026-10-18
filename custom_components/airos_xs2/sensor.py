@@ -147,7 +147,6 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         self._target_device_identifiers = identifiers
         self._target_via_device_id = via_device_id
         self._target_device_name = device_name
-        self._target_device_name = device_name
         self._entry_id = entry.entry_id
         self._attr_device_info = DeviceInfo(
             identifiers=identifiers,
