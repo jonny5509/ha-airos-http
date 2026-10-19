@@ -2,6 +2,8 @@
 
 [![Downloads](https://img.shields.io/github/downloads/jonny5509/ha-airos-http/total?label=downloads)](https://github.com/jonny5509/ha-airos-http/releases)
 
+[![Version](https://img.shields.io/github/v/release/jonny5509/ha-airos-http?display_name=tag&sort=semver)](https://github.com/jonny5509/ha-airos-http/releases/latest)
+
 **Canonical repository:** https://github.com/jonny5509/ha-airos-http  
 **Git clone URL:** https://github.com/jonny5509/ha-airos-http.git
 
