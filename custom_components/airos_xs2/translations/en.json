@@ -1,0 +1,20 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Ubiquiti AirOS",
+        "description": "Connect to a legacy airOS 4.x device using its local HTTP web interface.",
+        "data": {
+          "name": "Device name",
+          "host": "Device IP address or URL",
+          "username": "Username",
+          "password": "Password"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This device is already configured."
+    }
+  },
+  "title": "Ubiquiti AirOS (HTTP)"
+}
