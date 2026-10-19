@@ -1,1 +1,3 @@
-homeassistant\npytest\n
+homeassistant
+pytest
+pytest-asyncio
