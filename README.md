@@ -1,5 +1,7 @@
 # Ubiquiti AirOS over HTTP (legacy XS5 / airOS 4.0.4)
 
+[![Downloads](https://img.shields.io/github/downloads/jonny5509/ha-airos-http/total?label=downloads)](https://github.com/jonny5509/ha-airos-http/releases)
+
 **Canonical repository:** https://github.com/jonny5509/ha-airos-http  
 **Git clone URL:** https://github.com/jonny5509/ha-airos-http.git
 
