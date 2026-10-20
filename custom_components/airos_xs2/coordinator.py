@@ -68,27 +68,15 @@ def _normalise(data):
         "essid": ("essid", "ssid", "wlan_essid"),
         "frequency": ("frequency", "wlan_frequency", "freq"),
         "wlanMac": ("wlanmac", "wlan_mac", "wireless_mac", "wmac"),
-        "mac": ("mac", "devicemac", "device_mac"),
-        "ip_address": ("ip_address", "deviceip", "ipaddr"),
-        "lan_mac": ("lan_mac", "lmac", "lanmac"),
-        "lan_ip": ("lan_ip", "lip", "lanip"),
-        "lan_plugged": ("lan_plugged", "lanplugged", "plugged"),
-        "lan_rx_bytes": ("lan_rx_bytes", "lanrxbytes", "rx_bytes"),
-        "lan_rx_errors": ("lan_rx_errors", "lanrxerrors", "rx_errors"),
-        "lan_rx_packets": ("lan_rx_packets", "lanrxpackets", "rx_packets"),
-        "lan_tx_bytes": ("lan_tx_bytes", "lantxbytes", "tx_bytes"),
-        "lan_tx_errors": ("lan_tx_errors", "lantxerrors", "tx_errors"),
-        "lan_tx_packets": ("lan_tx_packets", "lantxpackets", "tx_packets"),
+        "mac": ("mac", "devicemac", "device_mac", "lmac"),
+        "ip_address": ("ip_address", "deviceip", "ipaddr", "lan_ip", "lip"),
         "uptime_seconds": ("uptime_seconds", "uptime", "system_uptime"),
     }
-    exact_lookup = {str(k).lower(): v for k, v in data.items()}
     lookup = {re.sub(r"[^a-z0-9]", "", str(k).lower()): v for k, v in data.items()}
     result = dict(data)
     for target, candidates in aliases.items():
         for candidate in candidates:
-            value = exact_lookup.get(candidate.lower())
-            if value in (None, ""):
-                value = lookup.get(re.sub(r"[^a-z0-9]", "", candidate))
+            value = lookup.get(re.sub(r"[^a-z0-9]", "", candidate))
             if value not in (None, ""):
                 result[target] = value
                 break
