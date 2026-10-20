@@ -1,45 +1,45 @@
-# Ubiquiti AirOS over HTTP (legacy XS5 / airOS 4.0.4)
+# Ubiquiti AirOS (SSH / HTTP)
 
-[![Downloads](https://img.shields.io/github/downloads/jonny5509/ha-airos-http/total?label=downloads)](https://github.com/jonny5509/ha-airos-http/releases) [![Version](https://img.shields.io/github/v/release/jonny5509/ha-airos-http?display_name=tag&sort=semver)](https://github.com/jonny5509/ha-airos-http/releases/latest) [![HACS Compatible](https://img.shields.io/badge/HACS-Compatible-41BDF5.svg)](https://hacs.xyz/)
+Home Assistant custom integration for legacy Ubiquiti airOS devices. Select **SSH** or **HTTP** during setup.
 
+## Features
 
-**Canonical repository:** https://github.com/jonny5509/ha-airos-http  
-**Git clone URL:** https://github.com/jonny5509/ha-airos-http.git
-
-Home Assistant custom integration that uses **plain HTTP only** for all communication with the radio. It does not use SSH or HTTPS.
-
-**Target firmware:** `XS5.ar2313.v4.0.4.5074.150724.1344` (legacy airOS 4.x).
+- One integration and one setup flow for both connection methods.
+- SSH backend retains the existing `mca-status` sensors, system probes, and reboot switch.
+- HTTP backend retains the legacy `login.cgi` / `status.cgi` polling, discovered status sensors, and reboot button.
+- Existing HTTP entries are identified by their saved `http://` host. Existing SSH entries without a protocol are treated as SSH for backward compatibility.
 
 ## Installation
 
 ### HACS
 
-1. In HACS, open the custom repositories menu.
-2. Add `https://github.com/jonny5509/ha-airos-http` as an **Integration** repository.
-3. Install **Ubiquiti AirOS (HTTP)** from that repository and restart Home Assistant.
-
-Use the repository above (the `ha-airos-http` name), not the old `http-AirOS` repository URL. If HACS has the old custom repository saved, remove that entry and add the canonical URL above again.
+1. Add `https://github.com/jonny5509/ha-airos-http` as a custom repository in HACS.
+2. Choose **Integration**, install it, and restart Home Assistant.
+3. Add **Ubiquiti AirOS** from Settings → Devices & services.
+4. Choose SSH or HTTP and enter the device details.
 
 ### Manual
 
-1. Copy `custom_components/airos_xs2` into your Home Assistant `config/custom_components/` directory.
-2. Restart Home Assistant.
-3. Add **Ubiquiti AirOS (HTTP)** from Settings → Devices & services.
-4. Enter the device name, IP address (for example `192.168.1.20`), and the device's web-interface username and password. The integration normalizes the address to `http://`.
+Copy `custom_components/airos_xs2` into `/config/custom_components/`, restart Home Assistant, and add **Ubiquiti AirOS**.
 
-## How it works
+## Connection methods
 
-The integration uses the legacy `/login.cgi` form login and session cookies, then requests `/status.cgi`. All requests are made over HTTP; SSH is not used and no shell commands are run on the radio.
+### SSH
 
-Only sensors represented in the HTTP response can be populated. CPU usage, memory and interface byte counters were previously collected from procfs over SSH, and are **not guaranteed** to be exposed by this HTTP interface. The code should be treated as an initial implementation until tested against the actual radio response.
+Uses `asyncssh` and legacy SSH algorithms for older airOS firmware. SSH provides richer telemetry such as CPU, memory, uptime, interface counters, and additional `mca-status` fields. Enable SSH on the device.
 
-## Troubleshooting
+### HTTP
 
-- Confirm the radio's HTTP web interface is reachable from Home Assistant.
-- If sensors remain unavailable, inspect the response from `http://DEVICE-IP/status.cgi` after logging in. Legacy airOS versions may return HTML rather than JSON. Share a sample with passwords, cookies and other secrets removed so the parser can be adapted.
-- Plain HTTP does not encrypt credentials or status data. Keep management access on a trusted LAN or VPN and do not expose it to the public internet.
-- If HACS tries to download a URL under `/archive/refs/heads/<short-commit>.zip`, it is treating a commit ID as a branch name. Remove the stale custom repository entry, add the canonical repository URL above, and choose the `main` branch if prompted.
+Uses the legacy airOS web interface and plain HTTP. It does not require SSH, but can only expose values returned by the device's web endpoints. HTTP does not encrypt credentials or telemetry; use only on a trusted LAN or VPN and never expose the management interface directly to the public internet.
 
-## Firmware
+## Migration notes
 
-The integration recognizes `4.0.4.5074` as the target NanoStation5 release for its firmware comparison. Verify the hardware model before applying firmware to any device.
+The integration domain remains `airos_xs2`. Existing HTTP entries with a saved `http://` host continue to use HTTP. Existing SSH entries with a plain host and no saved protocol are treated as SSH. After updating, check each device's entities and confirm its selected connection method.
+
+## Compatibility
+
+Designed for legacy Ubiquiti airOS 4.x devices. Availability of sensors and commands depends on firmware and hardware.
+
+## License
+
+MIT
