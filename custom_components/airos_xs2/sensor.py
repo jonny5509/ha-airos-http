@@ -30,9 +30,7 @@ SENSORS = {
     "ip_address": ("Device IP Address", None, None, None),
     "hostname": ("Hostname", None, None, None),
     "uptime_seconds": ("Uptime", UnitOfTime.SECONDS, SensorDeviceClass.DURATION, SensorStateClass.TOTAL_INCREASING),
-    "apmac": ("Access Point MAC Address", None, None, None),
     "channel": ("Wireless Channel", None, None, None),
-    "date_time": ("Radio Date and Time", None, None, None),
     "security": ("Wireless Security", None, None, None),
     "qos": ("Wireless QoS", None, None, None),
     "antenna": ("Antenna Polarization", None, None, None),
@@ -138,7 +136,23 @@ async def async_setup_entry(hass, entry, async_add_entities):
     # Also expose every additional scalar field found in the HTTP responses.
     # This deliberately makes discovery broad so users can decide which raw
     # firmware-specific sensors they want to keep or disable later.
+    duplicate_aliases = {
+        "side_devicename": "hostname", "devicename": "hostname",
+        "date_time": "radio_date_time", "datetime": "radio_date_time",
+        "radio_datetime": "radio_date_time",
+        "ap_mac": "apmac", "apmacaddr": "apmac", "wlan_apmac": "apmac",
+        "cfgcrc": "cfg_crc", "configcrc": "cfg_crc", "config_crc": "cfg_crc",
+        "devicemodel": "device_model", "model": "device_model",
+        "linkdistance": "distance", "dist": "distance",
+        "lat": "latitude", "lon": "longitude", "lng": "longitude",
+        "ppp_rx_bytes": "ppp_rxbytes", "ppp_rx_packets": "ppp_rxpackets",
+        "ppp_rx_errors": "ppp_rxerrors", "ppp_tx_bytes": "ppp_txbytes",
+        "ppp_tx_packets": "ppp_txpackets", "ppp_tx_errors": "ppp_txerrors",
+    }
     for key, value in data.items():
+        canonical_key = duplicate_aliases.get(key.lower())
+        if canonical_key and data.get(canonical_key) not in (None, ""):
+            continue
         if key in SENSORS or value is None or isinstance(value, (dict, list, tuple, set)):
             continue
         entities.append(
