@@ -2,7 +2,7 @@
 
 [![Downloads](https://img.shields.io/github/downloads/jonny5509/ha-airos-http/total?label=downloads)](https://github.com/jonny5509/ha-airos-http/releases)
 
-**Current integration version:** `2.1.6` (see `custom_components/airos_xs2/manifest.json`)
+**Current integration version:** `2.1.7` (see `custom_components/airos_xs2/manifest.json`)
 
 **Canonical repository:** https://github.com/jonny5509/ha-airos-http  
 **Git clone URL:** https://github.com/jonny5509/ha-airos-http.git
