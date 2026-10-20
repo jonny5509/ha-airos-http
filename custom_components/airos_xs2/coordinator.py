@@ -81,11 +81,14 @@ def _normalise(data):
         "lan_tx_packets": ("lan_tx_packets", "lantxpackets", "tx_packets"),
         "uptime_seconds": ("uptime_seconds", "uptime", "system_uptime"),
     }
+    exact_lookup = {str(k).lower(): v for k, v in data.items()}
     lookup = {re.sub(r"[^a-z0-9]", "", str(k).lower()): v for k, v in data.items()}
     result = dict(data)
     for target, candidates in aliases.items():
         for candidate in candidates:
-            value = lookup.get(re.sub(r"[^a-z0-9]", "", candidate))
+            value = exact_lookup.get(candidate.lower())
+            if value in (None, ""):
+                value = lookup.get(re.sub(r"[^a-z0-9]", "", candidate))
             if value not in (None, ""):
                 result[target] = value
                 break
