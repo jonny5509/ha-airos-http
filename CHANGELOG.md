@@ -2,6 +2,11 @@
 
 This changelog summarizes verified changes from the repository history. Historical entries before 2.1.1 may be incomplete.
 
+## 2.1.8
+
+- Improve setup form wording and field descriptions for the device name, host, and HTTP web-interface credentials.
+- Provide a clearer example HTTP address for the host field.
+
 ## 2.1.7
 
 - Align the main radio device's diagnostic sensors with the SSH integration where the HTTP response provides those values.
