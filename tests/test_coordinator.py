@@ -32,6 +32,29 @@ def test_parse_status_rejects_unrecognised_html():
         _parse_status("<html><body>not a status response</body></html>")
 
 
+def test_parse_status_air_os_3_style_assignments_without_semicolons():
+    # Older CGI output may omit semicolons and include empty nullable fields.
+    parsed = _parse_status(
+        "platform = 'XS2'\r\nsignal = -71\r\n"
+        "essid = 'Old Radio Name'\r\noptional_value = null\r\n"
+    )
+    assert parsed["platform"] == "XS2"
+    assert parsed["signal"] == -71
+    assert parsed["essid"] == "Old Radio Name"
+    assert parsed["optional_value"] is None
+
+
+def test_parse_status_air_os_4_style_assignments_with_semicolons():
+    parsed = _parse_status(
+        'platform = "XS5";\nnoise = -96;\nradio_enabled = true;\n'
+        'unused_value = undefined;'
+    )
+    assert parsed["platform"] == "XS5"
+    assert parsed["noise"] == -96
+    assert parsed["radio_enabled"] is True
+    assert parsed["unused_value"] is None
+
+
 def test_normalise_common_wireless_aliases_and_derive_snr():
     result = _normalise({
         "wlan_signal": "-63 dBm",
