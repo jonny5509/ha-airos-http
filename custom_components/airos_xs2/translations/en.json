@@ -2,13 +2,19 @@
   "config": {
     "step": {
       "user": {
-        "title": "Connect to Ubiquiti AirOS",
-        "description": "Connect to a legacy airOS 4.x device using its local HTTP web interface.",
+        "title": "Connect to a Ubiquiti AirOS device",
+        "description": "Enter the device name and HTTP connection details for your AirOS device.",
         "data": {
           "name": "Device name",
-          "host": "Device IP address or URL",
+          "host": "Host",
           "username": "Username",
           "password": "Password"
+        },
+        "data_description": {
+          "name": "A friendly name to show in Home Assistant.",
+          "host": "The device hostname, IP address, or HTTP URL, for example http://192.168.1.20.",
+          "username": "The username used to sign in to the AirOS web interface.",
+          "password": "The password used to sign in to the AirOS web interface."
         }
       }
     },
