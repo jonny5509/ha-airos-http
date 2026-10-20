@@ -1,6 +1,4 @@
 {
   "name": "Ubiquiti AirOS (HTTP)",
-  "render_readme": true,
-  "zip_release": true,
-  "filename": "airos-http.zip"
+  "render_readme": true
 }
