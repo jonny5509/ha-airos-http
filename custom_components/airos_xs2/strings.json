@@ -3,8 +3,9 @@
     "step": {
       "user": {
         "title": "Connect to Ubiquiti AirOS",
-        "description": "Connect to a legacy airOS 4.x device using its local HTTP web interface.",
+        "description": "Choose SSH for richer telemetry and controls, or HTTP for the legacy web interface.",
         "data": {
+          "protocol": "Connection method",
           "name": "Device name",
           "host": "Device IP address or URL",
           "username": "Username",
@@ -16,5 +17,5 @@
       "already_configured": "This device is already configured."
     }
   },
-  "title": "Ubiquiti AirOS (HTTP)"
+  "title": "Ubiquiti AirOS"
 }
