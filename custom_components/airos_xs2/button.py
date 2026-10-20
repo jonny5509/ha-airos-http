@@ -24,7 +24,7 @@ class AirOSRebootButton(CoordinatorEntity, ButtonEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.data["host"])},
             manufacturer="Ubiquiti",
-            model="NanoStation5 / airOS 4.x",
+            model="Original NanoStation 2/5 (airOS 3.x–4.x)",
             name=entry.data["name"],
             configuration_url=coordinator.host.rstrip("/"),
         )
