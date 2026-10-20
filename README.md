@@ -1,65 +1,63 @@
-# Ubiquiti AirOS over HTTP (legacy XS5 / airOS 4.0.4)
+# Ubiquiti AirOS (HTTP)
 
 [![Downloads](https://img.shields.io/github/downloads/jonny5509/ha-airos-http/total?label=downloads)](https://github.com/jonny5509/ha-airos-http/releases)
 
-**Current integration version:** `2.1.7` (see `custom_components/airos_xs2/manifest.json`)
+**Version:** 2.1.7  
+**Transport:** HTTP  
+**Repository:** https://github.com/jonny5509/ha-airos-http
 
-**Canonical repository:** https://github.com/jonny5509/ha-airos-http  
-**Git clone URL:** https://github.com/jonny5509/ha-airos-http.git
-
-Home Assistant custom integration for legacy Ubiquiti AirOS devices. This variant communicates with the radio using **plain HTTP only**; it does not use SSH or HTTPS.
-
-**Target firmware:** `XS5.ar2313.v4.0.4.5074.150724.1344` (legacy airOS 4.x).
+A Home Assistant custom integration for monitoring legacy Ubiquiti AirOS radios. This edition uses the radio's web interface over plain HTTP; it does not use SSH or HTTPS.
 
 ## Features
 
-- UI-based setup through Home Assistant Config Flow
-- HTTP login using the legacy `/login.cgi` form and session cookies
-- Polls `/status.cgi` and parses JSON or legacy JavaScript-style status assignments
-- Wireless signal, noise, CCQ, SNR, TX/RX rate, SSID, frequency, and wireless MAC when reported by the radio
-- Device identity and status sensors, including hostname, IP/MAC address, uptime, and other values returned by the firmware
-- Optional LAN, wireless, and PPP interface counters and diagnostics when exposed by the device
-- HACS-compatible Home Assistant integration
+- Home Assistant UI setup
+- Wireless signal, noise, CCQ, SNR, TX/RX rates, SSID, and frequency when reported by the device
+- Device hostname, IP/MAC addresses, uptime, and other status information
+- Optional LAN, wireless, and PPP interface counters
+- Parses JSON and legacy JavaScript-style status responses
 
-Sensors are created from values actually returned by the device. Available sensors therefore depend on the firmware and its HTTP status response.
+Available sensors depend on the radio model, firmware, and fields exposed by its HTTP status page.
+
+## Compatibility
+
+- Intended for legacy airOS 4.x devices.
+- Target firmware used for comparison: `XS5.ar2313.v4.0.4.5074.150724.1344`.
+- The integration logs in through `/login.cgi` and polls `/status.cgi`.
+
+The HTTP interface may expose fewer diagnostics than the SSH edition, including limited CPU, memory, or interface-counter data.
 
 ## Installation
 
 ### HACS
 
-1. In HACS, open the custom repositories menu.
-2. Add `https://github.com/jonny5509/ha-airos-http` as an **Integration** repository.
-3. Install **Ubiquiti AirOS (HTTP)** from that repository and restart Home Assistant.
-4. Add the integration from **Settings → Devices & services → Add integration**.
+1. Open **HACS → Integrations → ⋮ → Custom repositories**.
+2. Add `https://github.com/jonny5509/ha-airos-http` and select **Integration**.
+3. Install **Ubiquiti AirOS (HTTP)** and restart Home Assistant.
+4. Go to **Settings → Devices & services → Add integration** and select **Ubiquiti AirOS (HTTP)**.
 
-Use the canonical `ha-airos-http` repository URL above, not the old `http-AirOS` repository URL. If HACS has the old custom repository saved, remove that entry and add the canonical URL again.
+Use this canonical repository URL if you previously added an older repository address.
 
 ### Manual
 
-1. Download this repository.
+1. Download or clone this repository.
 2. Copy `custom_components/airos_xs2` into your Home Assistant `config/custom_components/` directory.
 3. Restart Home Assistant.
 4. Add **Ubiquiti AirOS (HTTP)** from **Settings → Devices & services → Add integration**.
-5. Enter a device name, IP address (for example `192.168.1.20`), and the device's web-interface username and password. The integration normalizes the address to `http://`.
+5. Enter the radio's IP address and web-interface credentials.
 
-## How it works
-
-The integration signs in through the legacy `/login.cgi` form, maintains the session cookies, and requests `/status.cgi` on its polling cycle. It supports JSON and common JavaScript assignment formats returned by older airOS firmware. SSH is not used and no shell commands are run on the radio.
-
-The HTTP interface may not expose every value available through SSH. In particular, CPU usage, memory statistics, and some interface counters may be unavailable on this firmware.
+The integration uses an `http://` address. Make sure Home Assistant can reach the radio's web interface.
 
 ## Troubleshooting
 
-- Confirm the radio's HTTP web interface is reachable from Home Assistant.
-- If sensors remain unavailable, inspect the response from `http://DEVICE-IP/status.cgi` after logging in. Legacy airOS versions may return JavaScript-style assignments rather than JSON.
-- If you share a sample response to help improve parsing, remove passwords, cookies, tokens, and other secrets first.
-- If HACS tries to download a URL under `/archive/refs/heads/<short-commit>.zip`, it may be treating a commit ID as a branch name. Remove the stale custom repository entry, add the canonical repository URL, and choose the `main` branch if prompted.
-- Plain HTTP does not encrypt credentials or status data. Keep management access on a trusted LAN or VPN and do not expose it to the public internet.
+- Confirm the radio's HTTP interface is reachable from Home Assistant.
+- If sensors are unavailable, check the logged-in `/status.cgi` response and whether it contains the expected fields.
+- Legacy firmware may return JavaScript-style assignments rather than JSON.
+- Remove passwords, cookies, tokens, and other secrets before sharing logs or responses.
 
-## Firmware
+## Security
 
-The integration recognizes `4.0.4.5074` as the target NanoStation5 release for its firmware comparison. Verify the hardware model and firmware compatibility before applying firmware to any device.
+Plain HTTP does not encrypt credentials or status data. Keep management access on a trusted LAN or VPN and do not expose the radio's management interface to the public internet.
 
 ## Related project
 
-The separate SSH-based integration is available at https://github.com/jonny5509/ha-airos-ssh. The HTTP and SSH variants use different transports and may expose different sensors.
+Prefer SSH-based polling and additional best-effort diagnostics? See the [Ubiquiti AirOS (SSH) integration](https://github.com/jonny5509/ha-airos-ssh).
