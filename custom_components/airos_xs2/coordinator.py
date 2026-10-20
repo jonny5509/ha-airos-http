@@ -109,6 +109,37 @@ def _normalise(data):
                 result[target] = value
                 break
 
+    # Keep one stable key for the requested diagnostics. status.cgi can expose
+    # the same value under multiple spellings; leaving the raw aliases in
+    # result makes the sensor platform create duplicate entities for one value.
+    duplicate_aliases = {
+        "wlan_signal": "signal", "wireless_signal": "signal", "signal_strength": "signal",
+        "noisef": "noise", "wlan_noise": "noise", "wireless_noise": "noise",
+        "wlan_tx_rate": "wlanTxRate", "tx_rate": "wlanTxRate",
+        "wlan_rx_rate": "wlanRxRate", "rx_rate": "wlanRxRate",
+        "ap_mac": "apmac", "apmacaddr": "apmac", "wlan_apmac": "apmac",
+        "cfgcrc": "cfg_crc", "configcrc": "cfg_crc", "config_crc": "cfg_crc",
+        "devicemodel": "device_model", "model": "device_model",
+        "linkdistance": "distance", "dist": "distance",
+        "ack_timeout": "ack_timeout", "lat": "latitude", "lon": "longitude", "lng": "longitude",
+        "datetime": "radio_date_time", "date_time": "radio_date_time", "radio_datetime": "radio_date_time",
+        "pppip": "ppp_ip", "pppaddress": "ppp_ip",
+        "ppp_rx_bytes": "ppp_rxbytes", "ppp_received_data": "ppp_rxbytes",
+        "ppp_rx_packets": "ppp_rxpackets", "ppp_received_packets": "ppp_rxpackets",
+        "ppp_rx_errors": "ppp_rxerrors", "ppp_receive_errors": "ppp_rxerrors",
+        "ppp_tx_bytes": "ppp_txbytes", "ppp_transmitted_data": "ppp_txbytes",
+        "ppp_tx_packets": "ppp_txpackets", "ppp_transmitted_packets": "ppp_txpackets",
+        "ppp_tx_errors": "ppp_txerrors", "ppp_transmit_errors": "ppp_txerrors",
+    }
+    for alias, canonical in duplicate_aliases.items():
+        alias_key = next(
+            (key for key in result if re.sub(r"[^a-z0-9]", "", str(key).lower())
+             == re.sub(r"[^a-z0-9]", "", alias)),
+            None,
+        )
+        if alias_key is not None and alias_key != canonical and result.get(canonical) not in (None, ""):
+            result.pop(alias_key, None)
+
     def number(key):
         try:
             match = re.match(r"^\s*(-?\d+(?:\.\d+)?)", str(result[key]))
