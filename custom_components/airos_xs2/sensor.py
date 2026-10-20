@@ -73,6 +73,12 @@ SENSORS = {
     "ppp_txbytes": ("PPP Transmitted Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
     "ppp_txpackets": ("PPP Transmitted Packets", None, None, SensorStateClass.TOTAL_INCREASING),
     "ppp_txerrors": ("PPP Transmit Errors", None, None, SensorStateClass.TOTAL_INCREASING),
+    "apmac": ("AP MAC", None, None, None), "cfg_crc": ("Cfg CRC", None, None, None),
+    "device_model": ("Device Model", None, None, None), "distance": ("Distance", None, None, None),
+    "ack_timeout": ("Ack Timeout", None, None, None), "latitude": ("Latitude", None, None, None),
+    "longitude": ("Longitude", None, None, None), "radio_date_time": ("Radio Date and Time", None, None, None),
+    "deviceId": ("Device ID", None, None, None), "firmwareVersion": ("Firmware Version", None, None, None),
+    "platform": ("Platform", None, None, None), "deviceIp": ("Configured Device IP Address", None, None, None),
 }
 
 
@@ -157,15 +163,24 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         self._attr_state_class = state_class
         host = entry.data["host"]
         self._host = host
+        main_device_keys = {
+            "signal","noise","wlanTxRate","wlanRxRate","frequency","apmac","cfg_crc",
+            "device_model","distance","ack_timeout","latitude","longitude","radio_date_time",
+            "ppp_ip","ppp_rxbytes","ppp_rxpackets","ppp_rxerrors","ppp_txbytes","ppp_txpackets",
+            "ppp_txerrors","deviceId","firmwareVersion","platform","deviceIp","mac","hostname",
+            "uptime_seconds","cpu_model","cpu_usage","ram_usage_percent",
+        }
         wireless_keys = {
-            "signal", "noise", "ccq", "snr", "wlanTxRate", "wlanRxRate",
-            "essid", "frequency", "wlanMac", "apmac", "channel", "security",
-            "qos", "antenna", "ack", "rstatus", "err_nwids", "err_crypts",
-            "err_frags", "err_retries", "err_beacons", "err_misc",
-            "wlan_rxbytes", "wlan_rxpackets", "wlan_rxerrors",
+            "ccq", "snr", "essid", "wlanMac", "channel", "security", "qos", "antenna",
+            "ack", "rstatus", "err_nwids", "err_crypts", "err_frags", "err_retries",
+            "err_beacons", "err_misc", "wlan_rxbytes", "wlan_rxpackets", "wlan_rxerrors",
             "wlan_txbytes", "wlan_txpackets", "wlan_txerrors",
         }
-        if key in wireless_keys or key in {"wmac", "wip"} or key.lower().startswith(("wlan_", "wireless_")):
+        if key in main_device_keys:
+            device_name = entry.data["name"]
+            identifiers = {(DOMAIN, host)}
+            via_device = False
+        elif key in wireless_keys or key in {"wmac", "wip"} or key.lower().startswith(("wlan_", "wireless_")):
             device_id = f"{host}_wireless"
             device_name = f"{entry.data['name']} Wireless"
             identifiers = {(DOMAIN, device_id)}

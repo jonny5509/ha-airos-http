@@ -86,6 +86,19 @@ def _normalise(data):
         "lan_txerrors": ("lan_txerrors", "lan_transmit_errors", "lan_transmitted_errors"),
         "lan_tx_errors": ("lan_tx_errors", "lantxerrors"),
         "uptime_seconds": ("uptime_seconds", "uptime", "system_uptime"),
+        "apmac": ("apmac","ap_mac","apmacaddr","wlan_apmac"),
+        "cfg_crc": ("cfgcrc","cfg_crc","configcrc","config_crc"),
+        "device_model": ("devicemodel","device_model","model"),
+        "distance": ("distance","linkdistance","dist"), "ack_timeout": ("acktimeout","ack_timeout"),
+        "latitude": ("latitude","lat"), "longitude": ("longitude","lon","lng"),
+        "radio_date_time": ("datetime","radio_datetime","date_time","radio_date_time"),
+        "ppp_ip": ("pppip","ppp_ip","pppaddress"),
+        "ppp_rxbytes": ("ppp_rxbytes","ppp_rx_bytes","ppp_received_data"),
+        "ppp_rxpackets": ("ppp_rxpackets","ppp_rx_packets","ppp_received_packets"),
+        "ppp_rxerrors": ("ppp_rxerrors","ppp_rx_errors","ppp_receive_errors"),
+        "ppp_txbytes": ("ppp_txbytes","ppp_tx_bytes","ppp_transmitted_data"),
+        "ppp_txpackets": ("ppp_txpackets","ppp_tx_packets","ppp_transmitted_packets"),
+        "ppp_txerrors": ("ppp_txerrors","ppp_tx_errors","ppp_transmit_errors"),
     }
     lookup = {re.sub(r"[^a-z0-9]", "", str(k).lower()): v for k, v in data.items()}
     result = dict(data)
