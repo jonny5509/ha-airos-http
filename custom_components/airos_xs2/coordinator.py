@@ -140,6 +140,30 @@ def _normalise(data):
         if alias_key is not None and alias_key != canonical and result.get(canonical) not in (None, ""):
             result.pop(alias_key, None)
 
+    # Legacy airOS 3.x-4.x devices may expose the product only in a model,
+    # platform, board or product field. Normalize known retail aliases while
+    # preserving unknown hardware identifiers as reported by the device.
+    if not result.get("device_model"):
+        identity = " ".join(
+            str(value) for key, value in result.items()
+            if key.lower() in {"platform", "board", "board_name", "product", "model",
+                               "deviceid", "device_model", "hardware"}
+        )
+        compact = re.sub(r"[^a-z0-9]", "", identity.lower())
+        model_aliases = (
+            ("picostation2", "PicoStation 2"), ("picostation5", "PicoStation 5"),
+            ("powerstation2", "PowerStation 2"), ("powerstation5", "PowerStation 5"),
+            ("nanostationloco2", "NanoStation Loco 2"), ("loco2", "NanoStation Loco 2"),
+            ("nanostationloco5", "NanoStation Loco 5"), ("loco5", "NanoStation Loco 5"),
+            ("bullet2", "Bullet 2"), ("bullet5", "Bullet 5"),
+            ("nanostation2", "NanoStation 2"), ("ns2", "NanoStation 2"), ("xs2", "NanoStation 2"),
+            ("nanostation5", "NanoStation 5"), ("ns5", "NanoStation 5"), ("xs5", "NanoStation 5"),
+        )
+        for alias, label in model_aliases:
+            if alias in compact:
+                result["device_model"] = label
+                break
+
     def number(key):
         try:
             match = re.match(r"^\s*(-?\d+(?:\.\d+)?)", str(result[key]))
