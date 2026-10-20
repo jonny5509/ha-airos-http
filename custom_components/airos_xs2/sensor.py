@@ -143,8 +143,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             identifiers = {(DOMAIN, device_id)}
             via_device = True
         elif key in {"mac", "ip_address", "lmac", "lip", "lan_state"} or key.lower().startswith("lan_"):
-            # Keep LAN metrics on the radio device rather than creating a
-            # separate Ethernet child device.
+            # Keep LAN metrics on the radio device rather than creating a separate LAN child device.
             device_name = entry.data["name"]
             identifiers = {(DOMAIN, host)}
             via_device = False
