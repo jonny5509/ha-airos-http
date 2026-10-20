@@ -37,7 +37,7 @@ def _parse_status(body):
 
     assignments = {}
     pattern = re.compile(
-        r"""\\b([A-Za-z_]\\w*)\\s*=\\s*(?:"((?:\\\\.|[^"\\\\])*)"|'((?:\\\\.|[^'\\\\])*)'|(-?\\d+(?:\\.\\d+)?)|(true|false|null|undefined))\\s*(?:;|(?=\\r?$))""",
+        r""" \b([A-Za-z_]\w*)\s*=\s*(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)'|(-?\d+(?:\.\d+)?)|(true|false|null|undefined))\s*(?:;|(?=\r?$))""".strip(),
         re.IGNORECASE | re.MULTILINE,
     )
     for match in pattern.finditer(body):
@@ -46,15 +46,14 @@ def _parse_status(body):
             try:
                 value = json.loads('"' + double_quoted + '"')
             except json.JSONDecodeError:
-                value = double_quoted.replace(r'\\"', '"').replace(r'\\\\', '\\\\')
+                value = double_quoted.replace(r'\"', '"').replace(r'\\', '\\')
         elif single_quoted is not None:
             value = (
-                single_quoted.replace(r"\\'", "'")
-                .replace(r'\\"', '"')
-                .replace(r'\\\\', '\\\\')
-                .replace(r'\\n', '\\n')
-                .replace(r'\\r', '\\r')
-                .replace(r'\\t', '\\t')
+                single_quoted.replace("\\'", "'")
+                .replace("\\\\", "\\")
+                .replace("\\n", "\n")
+                .replace("\\r", "\r")
+                .replace("\\t", "\t")
             )
         elif number is not None:
             value = float(number) if "." in number else int(number)
