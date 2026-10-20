@@ -48,6 +48,18 @@ def test_normalise_common_wireless_aliases_and_derive_snr():
     assert result["wlanTxRate"] == 150.0
 
 
+def test_normalise_identifies_only_original_nano_station_2_and_5_aliases():
+    ns2 = _normalise({"platform": "XS2"})
+    ns5 = _normalise({"platform": "XS5"})
+    loco = _normalise({"platform": "NanoStation Loco5"})
+    powerstation = _normalise({"platform": "PowerStation2"})
+
+    assert ns2["device_model"] == "NanoStation 2"
+    assert ns5["device_model"] == "NanoStation 5"
+    assert loco.get("device_model") != "NanoStation 5"
+    assert powerstation.get("device_model") != "NanoStation 2"
+
+
 def test_normalise_ignores_invalid_numeric_values():
     result = _normalise({"signal": "unknown", "frequency": "not set"})
     assert "signal" not in result
