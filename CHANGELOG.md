@@ -1,6 +1,6 @@
 # Changelog
 
-This changelog records verified changes from the repository history. Older entries are retained below; entries before 2.1.1 may not be complete.
+This changelog summarizes verified changes from the repository history. Historical entries before 2.1.1 may be incomplete.
 
 ## 2.1.7
 
@@ -12,14 +12,6 @@ This changelog records verified changes from the repository history. Older entri
 ## 2.1.6
 
 - Continue aligning HTTP sensor coverage and device diagnostics with the shared AirOS sensor list.
-
-## 2.1.5
-
-- Repository history does not provide a sufficiently clear release summary for this version.
-
-## 2.1.4
-
-- Repository history does not provide a sufficiently clear release summary for this version.
 
 ## 2.1.3
 
@@ -41,4 +33,4 @@ This changelog records verified changes from the repository history. Older entri
 
 - Sensor availability depends on the device model, firmware, and fields returned by the radio.
 - The HTTP interface uses plain HTTP; credentials and status data are not encrypted.
-- Changes to older versions are only listed where supported by the available repository history.
+- Older releases are omitted where the available repository history does not support a reliable summary.
