@@ -149,12 +149,8 @@ def _normalise(data):
                            "deviceid", "device_model", "hardware"}
     )
     compact = re.sub(r"[^a-z0-9]", "", identity.lower())
+    # Support only original NanoStation 2/5 identifiers; don't infer other families.
     model_aliases = (
-        ("picostation2", "PicoStation 2"), ("picostation5", "PicoStation 5"),
-        ("powerstation2", "PowerStation 2"), ("powerstation5", "PowerStation 5"),
-        ("nanostationloco2", "NanoStation Loco 2"), ("loco2", "NanoStation Loco 2"),
-        ("nanostationloco5", "NanoStation Loco 5"), ("loco5", "NanoStation Loco 5"),
-        ("bullet2", "Bullet 2"), ("bullet5", "Bullet 5"),
         ("nanostation2", "NanoStation 2"), ("ns2", "NanoStation 2"), ("xs2", "NanoStation 2"),
         ("nanostation5", "NanoStation 5"), ("ns5", "NanoStation 5"), ("xs5", "NanoStation 5"),
     )
