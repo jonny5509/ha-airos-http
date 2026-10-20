@@ -129,6 +129,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         self._attr_device_class = device_class
         self._attr_state_class = state_class
         host = entry.data["host"]
+        self._host = host
         wireless_keys = {
             "signal", "noise", "ccq", "snr", "wlanTxRate", "wlanRxRate",
             "essid", "frequency", "wlanMac", "apmac", "channel", "security",
@@ -142,11 +143,12 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             device_name = f"{entry.data['name']} Wireless"
             identifiers = {(DOMAIN, device_id)}
             via_device = True
-        elif key in {"mac", "ip_address", "lmac", "lip", "lan_state"} or key.lower().startswith("lan_"):
-            # Keep LAN metrics on the radio device rather than creating a separate LAN child device.
-            device_name = entry.data["name"]
-            identifiers = {(DOMAIN, host)}
-            via_device = False
+        elif key in {"lmac", "lip", "lan_state"} or key.lower().startswith("lan_"):
+            # LAN interface sensors belong to their own child device under the radio.
+            device_id = f"{host}_lan"
+            device_name = f"{entry.data['name']} LAN"
+            identifiers = {(DOMAIN, device_id)}
+            via_device = True
         elif key in {"wlanMac", "wlan_ip_address"}:
             # wmac and wip are wireless-interface identifiers.
             device_id = f"{host}_wireless"
@@ -173,12 +175,20 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         )
 
     async def async_added_to_hass(self):
-        """Ensure child devices exist and migrate existing entity assignments."""
+        """Ensure child devices exist and migrate entities from the legacy Ethernet device."""
         await super().async_added_to_hass()
+
+        device_registry = dr.async_get(self.hass)
+        entity_registry = er.async_get(self.hass)
+        host = self._host
+        is_lan_sensor = (
+            self.key in {"lmac", "lip", "lan_state"}
+            or self.key.lower().startswith("lan_")
+        )
+
         if self._target_via_device_id is None:
             return
 
-        device_registry = dr.async_get(self.hass)
         device = device_registry.async_get_or_create(
             config_entry_id=self._entry_id,
             identifiers=self._target_device_identifiers,
@@ -188,10 +198,32 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             configuration_url=self.coordinator.host.rstrip("/"),
             via_device_id=self._target_via_device_id,
         )
-        entity_registry = er.async_get(self.hass)
         entity_entry = entity_registry.async_get(self.entity_id)
         if entity_entry is not None and entity_entry.device_id != device.id:
             entity_registry.async_update_entity(self.entity_id, device_id=device.id)
+
+        if not is_lan_sensor:
+            return
+
+        # Existing LAN entities may still be assigned to the old Ethernet child.
+        # Move them to the new LAN child, then remove the obsolete device if empty.
+        legacy_device = device_registry.async_get_device(
+            identifiers={(DOMAIN, f"{host}_ethernet")}
+        )
+        if legacy_device is None:
+            return
+
+        for registered_entity in list(entity_registry.entities.values()):
+            if registered_entity.device_id == legacy_device.id:
+                entity_registry.async_update_entity(
+                    registered_entity.entity_id, device_id=device.id
+                )
+
+        if not any(
+            registered_entity.device_id == legacy_device.id
+            for registered_entity in entity_registry.entities.values()
+        ):
+            device_registry.async_remove_device(legacy_device.id)
 
     @property
     def native_value(self):
