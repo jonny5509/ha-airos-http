@@ -1,4 +1,4 @@
-"""Maintenance controls for legacy airOS devices."""
+"""HTTP-only maintenance controls for legacy airOS devices."""
 from homeassistant.components.button import ButtonEntity
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -7,6 +7,8 @@ from .const import DOMAIN
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
+    if entry.data.get("protocol", "http").lower() != "http":
+        return
     coordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities([AirOSRebootButton(coordinator, entry)])
 
@@ -24,12 +26,11 @@ class AirOSRebootButton(CoordinatorEntity, ButtonEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.data["host"])},
             manufacturer="Ubiquiti",
-            model="NanoStation5 / airOS 4.x",
+            model="Ubiquiti AirOS",
             name=entry.data["name"],
             configuration_url=coordinator.host.rstrip("/"),
         )
         self._coordinator = coordinator
 
     async def async_press(self):
-        """Request a normal reboot over the device's HTTP interface."""
         await self._coordinator.async_reboot()
