@@ -24,6 +24,8 @@ Available sensors depend on the radio model, firmware, and fields exposed by its
 - Other product families, including NanoStation Loco, Bullet, PicoStation, and PowerStation, are outside the supported scope.
 - Target firmware used for comparison: `XS5.ar2313.v4.0.4.5074.150724.1344`.
 - The integration logs in through `/login.cgi` and polls `/status.cgi`.
+- Automated tests cover JSON status payloads and common JavaScript assignment formats, including alternate key spellings and NS2/NS5 identity aliases.
+- Firmware-specific fields vary; parser-format tests do not mean every airOS 3.x/4.x build has been verified on physical hardware.
 
 The HTTP interface may expose fewer diagnostics than the SSH edition, including limited CPU, memory, or interface-counter data.
 
