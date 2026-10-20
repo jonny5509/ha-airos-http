@@ -2,11 +2,11 @@
 
 [![Downloads](https://img.shields.io/github/downloads/jonny5509/ha-airos-http/total?label=downloads)](https://github.com/jonny5509/ha-airos-http/releases)
 
-**Version:** 2.1.7  
+**Version:** 2.1.9  
 **Transport:** HTTP  
 **Repository:** https://github.com/jonny5509/ha-airos-http
 
-A Home Assistant custom integration for monitoring legacy Ubiquiti AirOS radios. This edition uses the radio's web interface over plain HTTP; it does not use SSH or HTTPS.
+A Home Assistant custom integration for monitoring the original Ubiquiti NanoStation 2 (NS2/XS2) and NanoStation 5 (NS5/XS5) running legacy airOS 3.x–4.x. This edition uses the radio's web interface over plain HTTP; it does not use SSH or HTTPS.
 
 ## Features
 
@@ -20,7 +20,8 @@ Available sensors depend on the radio model, firmware, and fields exposed by its
 
 ## Compatibility
 
-- Intended for legacy airOS 4.x devices.
+- Intended specifically for the original NanoStation 2 (NS2/XS2) and NanoStation 5 (NS5/XS5) with airOS 3.x–4.x.
+- Other product families, including NanoStation Loco, Bullet, PicoStation, and PowerStation, are outside the supported scope.
 - Target firmware used for comparison: `XS5.ar2313.v4.0.4.5074.150724.1344`.
 - The integration logs in through `/login.cgi` and polls `/status.cgi`.
 
