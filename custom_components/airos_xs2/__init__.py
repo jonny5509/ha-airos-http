@@ -15,7 +15,8 @@ _AUTO_NAMES = {
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    protocol = entry.data.get("protocol", "http").lower()
+    protocol = entry.data.get("protocol") or ("http" if entry.data.get("host", "").lower().startswith(("http://", "https://")) else "ssh")
+    protocol = protocol.lower()
     coordinator_class = SshCoordinator if protocol == "ssh" else HttpCoordinator
     coordinator = coordinator_class(
         hass, entry.data["host"], entry.data["username"],
