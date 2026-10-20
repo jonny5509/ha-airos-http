@@ -129,6 +129,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         self._attr_device_class = device_class
         self._attr_state_class = state_class
         host = entry.data["host"]
+        self._host = host
         wireless_keys = {
             "signal", "noise", "ccq", "snr", "wlanTxRate", "wlanRxRate",
             "essid", "frequency", "wlanMac", "apmac", "channel", "security",
@@ -178,7 +179,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
 
         device_registry = dr.async_get(self.hass)
         entity_registry = er.async_get(self.hass)
-        host = self.coordinator.device_name and self._attr_unique_id.rsplit("_", 1)[0]
+        host = self._host
         parent = device_registry.async_get_device(identifiers={(DOMAIN, host)})
 
         if self._target_via_device_id is not None:
