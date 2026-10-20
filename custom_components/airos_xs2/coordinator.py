@@ -1,4 +1,4 @@
-"""HTTP polling for legacy Ubiquiti airOS 4.x devices."""
+"""HTTP polling for original NanoStation devices running legacy airOS 3.x–4.x."""
 import json
 import logging
 import re
