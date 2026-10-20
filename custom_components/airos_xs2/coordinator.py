@@ -29,7 +29,7 @@ def _flatten(value, output, prefix=""):
 
 
 def _parse_status(body):
-    """Parse JSON or the JavaScript assignments returned by airOS 4."""
+    """Parse JSON and common JavaScript assignment variants from legacy airOS."""
     try:
         return json.loads(body)
     except json.JSONDecodeError:
@@ -37,24 +37,38 @@ def _parse_status(body):
 
     assignments = {}
     pattern = re.compile(
-        r"""\b([A-Za-z_]\w*)\s*=\s*(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)'|(-?\d+(?:\.\d+)?)|(true|false))\s*;""",
+        r"""\\b([A-Za-z_]\\w*)\\s*=\\s*(?:"((?:\\\\.|[^"\\\\])*)"|'((?:\\\\.|[^'\\\\])*)'|(-?\\d+(?:\\.\\d+)?)|(true|false|null|undefined))\\s*(?:;|(?=\\r?$))""",
         re.IGNORECASE | re.MULTILINE,
     )
     for match in pattern.finditer(body):
-        key, double_quoted, single_quoted, number, boolean = match.groups()
+        key, double_quoted, single_quoted, number, literal = match.groups()
         if double_quoted is not None:
-            value = double_quoted
+            try:
+                value = json.loads('"' + double_quoted + '"')
+            except json.JSONDecodeError:
+                value = double_quoted.replace(r'\\"', '"').replace(r'\\\\', '\\\\')
         elif single_quoted is not None:
-            value = single_quoted
+            value = (
+                single_quoted.replace(r"\\'", "'")
+                .replace(r'\\"', '"')
+                .replace(r'\\\\', '\\\\')
+                .replace(r'\\n', '\\n')
+                .replace(r'\\r', '\\r')
+                .replace(r'\\t', '\\t')
+            )
         elif number is not None:
             value = float(number) if "." in number else int(number)
+        elif literal.lower() == "true":
+            value = True
+        elif literal.lower() == "false":
+            value = False
         else:
-            value = boolean.lower() == "true"
+            # Old CGI responses sometimes include explicit null/undefined values.
+            value = None
         assignments[key] = value
     if not assignments:
         raise UpdateFailed("status.cgi did not contain recognised airOS status values.")
     return assignments
-
 
 def _normalise(data):
     """Map common airOS status key spellings to the integration's sensor keys."""
