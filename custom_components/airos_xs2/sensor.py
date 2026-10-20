@@ -44,13 +44,22 @@ SENSORS = {
     "err_retries": ("Wireless Retries", None, None, SensorStateClass.TOTAL_INCREASING),
     "err_beacons": ("Wireless Beacon Errors", None, None, SensorStateClass.TOTAL_INCREASING),
     "err_misc": ("Wireless Other Errors", None, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_ip_address": ("LAN IP Address", None, None, None),
+    "lan_mac_address": ("LAN MAC Address", None, None, None),
+    "lan_plugged": ("LAN Plugged", None, None, None),
     "lan_state": ("LAN State", None, None, None),
     "lan_rxbytes": ("LAN Received Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_rx_bytes": ("LAN RX Bytes", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
     "lan_rxpackets": ("LAN Received Packets", None, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_rx_packets": ("LAN RX Packets", None, None, SensorStateClass.TOTAL_INCREASING),
     "lan_rxerrors": ("LAN Receive Errors", None, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_rx_errors": ("LAN RX Errors", None, None, SensorStateClass.TOTAL_INCREASING),
     "lan_txbytes": ("LAN Transmitted Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_tx_bytes": ("LAN TX Bytes", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
     "lan_txpackets": ("LAN Transmitted Packets", None, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_tx_packets": ("LAN TX Packets", None, None, SensorStateClass.TOTAL_INCREASING),
     "lan_txerrors": ("LAN Transmit Errors", None, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_tx_errors": ("LAN TX Errors", None, None, SensorStateClass.TOTAL_INCREASING),
     "wlan_rxbytes": ("Wireless Received Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
     "wlan_rxpackets": ("Wireless Received Packets", None, None, SensorStateClass.TOTAL_INCREASING),
     "wlan_rxerrors": ("Wireless Receive Errors", None, None, SensorStateClass.TOTAL_INCREASING),
@@ -134,11 +143,11 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             identifiers = {(DOMAIN, device_id)}
             via_device = True
         elif key in {"mac", "ip_address", "lmac", "lip", "lan_state"} or key.lower().startswith("lan_"):
-            # lmac/lip are Ethernet-interface identifiers.
-            device_id = f"{host}_ethernet"
-            device_name = f"{entry.data['name']} Ethernet"
-            identifiers = {(DOMAIN, device_id)}
-            via_device = True
+            # Keep LAN metrics on the radio device rather than creating a
+            # separate Ethernet child device.
+            device_name = entry.data["name"]
+            identifiers = {(DOMAIN, host)}
+            via_device = False
         elif key in {"wlanMac", "wlan_ip_address"}:
             # wmac and wip are wireless-interface identifiers.
             device_id = f"{host}_wireless"
@@ -198,8 +207,10 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             "signal", "noise", "ccq", "snr", "wlanTxRate", "wlanRxRate",
             "frequency", "uptime_seconds", "channel", "ack", "rstatus",
             "err_nwids", "err_crypts", "err_frags", "err_retries",
-            "err_beacons", "err_misc", "lan_rxbytes", "lan_rxpackets",
-            "lan_rxerrors", "lan_txbytes", "lan_txpackets", "lan_txerrors",
+            "err_beacons", "err_misc", "lan_rxbytes", "lan_rx_bytes",
+            "lan_rxpackets", "lan_rx_packets", "lan_rxerrors", "lan_rx_errors",
+            "lan_txbytes", "lan_tx_bytes", "lan_txpackets", "lan_tx_packets",
+            "lan_txerrors", "lan_tx_errors", "lan_plugged",
             "wlan_rxbytes", "wlan_rxpackets", "wlan_rxerrors", "wlan_txbytes",
             "wlan_txpackets", "wlan_txerrors", "ppp_rxbytes", "ppp_rxpackets",
             "ppp_rxerrors", "ppp_txbytes", "ppp_txpackets", "ppp_txerrors",
