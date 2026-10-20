@@ -12,6 +12,8 @@ def _display_name(raw_name):
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
+    if entry.data.get("protocol", "ssh").lower() != "ssh":
+        return
     coordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities([AiRXS2RebootSwitch(coordinator, entry)])
 
