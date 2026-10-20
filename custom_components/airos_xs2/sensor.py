@@ -97,6 +97,33 @@ async def async_setup_entry(hass, entry, async_add_entities):
         configuration_url=coordinator.host.rstrip("/"),
     )
 
+    # Consolidate legacy per-interface devices into the canonical LAN child.
+    # Older builds could register ETH0/ETH1/SWITCH0 as separate devices; keep
+    # their entities and history while matching the SSH integration's grouping.
+    host = entry.data["host"]
+    lan_device = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, f"{host}_lan" if "true" else f"{host}_ethernet")},
+        name=f'{entry.data["name"]} LAN' if "true" else f"{display_name} LAN",
+        manufacturer="Ubiquiti",
+        model="NanoStation5 / airOS 4.x LAN" if "true" else f"{data.get("device_model") or "AirOS"} LAN",
+        via_device_id=parent_device.id,
+    )
+    entity_registry = er.async_get(hass)
+    interface_prefix = f'{entry.data["name"]} Interface '
+    for old_device in list(device_registry.devices.values()):
+        if old_device.id == lan_device.id or old_device.id == parent_device.id:
+            continue
+        if entry.entry_id not in old_device.config_entries:
+            continue
+        if not (old_device.name or "").startswith(interface_prefix):
+            continue
+        for registered_entity in list(entity_registry.entities.values()):
+            if registered_entity.device_id == old_device.id:
+                entity_registry.async_update_entity(registered_entity.entity_id, device_id=lan_device.id)
+        if not any(e.device_id == old_device.id for e in entity_registry.entities.values()):
+            device_registry.async_remove_device(old_device.id)
+
     # First add known sensors with units and device classes.
     for key, description in SENSORS.items():
         if key in data and data[key] is not None:
