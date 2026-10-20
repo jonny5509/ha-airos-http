@@ -173,25 +173,56 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         )
 
     async def async_added_to_hass(self):
-        """Ensure child devices exist and migrate existing entity assignments."""
+        """Migrate old LAN entities off the legacy Ethernet device."""
         await super().async_added_to_hass()
-        if self._target_via_device_id is None:
-            return
 
         device_registry = dr.async_get(self.hass)
-        device = device_registry.async_get_or_create(
-            config_entry_id=self._entry_id,
-            identifiers=self._target_device_identifiers,
-            manufacturer="Ubiquiti",
-            model="NanoStation5 / airOS 4.x",
-            name=self._target_device_name,
-            configuration_url=self.coordinator.host.rstrip("/"),
-            via_device_id=self._target_via_device_id,
-        )
         entity_registry = er.async_get(self.hass)
-        entity_entry = entity_registry.async_get(self.entity_id)
-        if entity_entry is not None and entity_entry.device_id != device.id:
-            entity_registry.async_update_entity(self.entity_id, device_id=device.id)
+        host = self.coordinator.device_name and self._attr_unique_id.rsplit("_", 1)[0]
+        parent = device_registry.async_get_device(identifiers={(DOMAIN, host)})
+
+        if self._target_via_device_id is not None:
+            device = device_registry.async_get_or_create(
+                config_entry_id=self._entry_id,
+                identifiers=self._target_device_identifiers,
+                manufacturer="Ubiquiti",
+                model="NanoStation5 / airOS 4.x",
+                name=self._target_device_name,
+                configuration_url=self.coordinator.host.rstrip("/"),
+                via_device_id=self._target_via_device_id,
+            )
+            entity_entry = entity_registry.async_get(self.entity_id)
+            if entity_entry is not None and entity_entry.device_id != device.id:
+                entity_registry.async_update_entity(self.entity_id, device_id=device.id)
+            return
+
+        # LAN metrics used to be grouped under a separate "{host}_ethernet"
+        # device. Move those existing entities to the radio device so the
+        # obsolete Ethernet device disappears after its last entity is moved.
+        if parent is None or not (
+            self.key in {"mac", "ip_address", "lmac", "lip", "lan_state"}
+            or self.key.lower().startswith("lan_")
+        ):
+            return
+
+        legacy_device = device_registry.async_get_device(
+            identifiers={(DOMAIN, f"{host}_ethernet")}
+        )
+        if legacy_device is None:
+            return
+
+        for registered_entity in list(entity_registry.entities.values()):
+            if registered_entity.device_id == legacy_device.id:
+                entity_registry.async_update_entity(
+                    registered_entity.entity_id, device_id=parent.id
+                )
+
+        remaining = any(
+            registered_entity.device_id == legacy_device.id
+            for registered_entity in entity_registry.entities.values()
+        )
+        if not remaining:
+            device_registry.async_remove_device(legacy_device.id)
 
     @property
     def native_value(self):
