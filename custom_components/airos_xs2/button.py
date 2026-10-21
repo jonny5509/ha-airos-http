@@ -24,8 +24,8 @@ class AirOSRebootButton(CoordinatorEntity, ButtonEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, device_identifier(entry.data["host"]))},
             manufacturer="Ubiquiti",
-            model="Original airOS 3.x–4.x",
-            name=entry.data["name"],
+            model=(coordinator.data or {}).get("device_model") or "Original airOS 3.x–4.x",
+            name=entry.data["name"].split(",", 1)[0].strip() or "AirOS Device",
             configuration_url=coordinator.host.rstrip("/"),
         )
         self._coordinator = coordinator
