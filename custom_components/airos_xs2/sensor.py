@@ -96,7 +96,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, entry.data["host"])},
         manufacturer="Ubiquiti",
-        model="Original airOS 3.x–4.x",
+        model=(data.get("device_model") or "Original airOS 3.x–4.x"),
         name=entry.data["name"],
         configuration_url=coordinator.host.rstrip("/"),
     )
@@ -113,6 +113,17 @@ async def async_setup_entry(hass, entry, async_add_entities):
         configuration_url=coordinator.host.rstrip("/"),
         via_device_id=parent_device.id,
     )
+    # The initial HTTP response may not expose hardware identity. Update the
+    # Home Assistant device once a later poll discovers the model.
+    def _update_registered_device_model():
+        detected_model = (coordinator.data or {}).get("device_model")
+        current_device = device_registry.async_get_device(
+            identifiers={(DOMAIN, entry.data["host"])}
+        )
+        if current_device and detected_model and current_device.model != detected_model:
+            device_registry.async_update_device(current_device.id, model=detected_model)
+
+    entry.async_on_unload(coordinator.async_add_listener(_update_registered_device_model))
     entity_registry = er.async_get(hass)
     interface_prefix = f"{entry.data['name']} Interface "
     for old_device in list(device_registry.devices.values()):
