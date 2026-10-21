@@ -20,7 +20,7 @@ class AirOSRebootButton(CoordinatorEntity, ButtonEntity):
 
     def __init__(self, coordinator, entry):
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.data['host']}_reboot"
+        self._attr_unique_id = f"{device_identifier(entry.data['host'])}_reboot"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, device_identifier(entry.data["host"]))},
             manufacturer="Ubiquiti",
