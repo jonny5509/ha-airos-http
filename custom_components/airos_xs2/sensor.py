@@ -225,7 +225,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             identifiers=identifiers,
             via_device_id=via_device_id,
             manufacturer="Ubiquiti",
-            model="Original airOS 3.x–4.x",
+            model=((coordinator.data or {}).get("device_model") or "Original airOS 3.x–4.x") if not via_device else (((coordinator.data or {}).get("device_model") or "Original airOS 3.x–4.x") + (" LAN" if key in {"lmac", "lip", "lan_state"} or key.lower().startswith("lan_") else " Wireless")),
             name=device_name,
             configuration_url=coordinator.host.rstrip("/"),
         )
@@ -249,7 +249,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             config_entry_id=self._entry_id,
             identifiers=self._target_device_identifiers,
             manufacturer="Ubiquiti",
-            model="Original airOS 3.x–4.x",
+            model=((self.coordinator.data or {}).get("device_model") or "Original airOS 3.x–4.x") + (" LAN" if is_lan_sensor else " Wireless"),
             name=self._target_device_name,
             configuration_url=self.coordinator.host.rstrip("/"),
             via_device_id=self._target_via_device_id,
