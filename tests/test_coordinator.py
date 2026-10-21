@@ -83,6 +83,21 @@ def test_normalise_identifies_only_original_nano_station_2_and_5_aliases():
     assert powerstation.get("device_model") != "NanoStation 2"
 
 
+@pytest.mark.parametrize(
+    "identity",
+    [
+        {"boardName": "NanoStation5"},
+        {"productName": "NanoStation5"},
+        {"deviceModel": "NanoStation5"},
+        {"system_boardName": "NanoStation5"},
+        {"wireless_deviceModel": "NanoStation5"},
+    ],
+)
+def test_normalise_identifies_nano_station_5_from_legacy_identity_variants(identity):
+    result = _normalise(identity)
+    assert result["device_model"] == "NanoStation 5"
+
+
 def test_normalise_ignores_invalid_numeric_values():
     result = _normalise({"signal": "unknown", "frequency": "not set"})
     assert "signal" not in result
