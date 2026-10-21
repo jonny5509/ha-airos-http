@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Align device identifiers and device metadata with the SSH integration so the same radio is represented consistently across transports.
+- Standardize the reboot control as a **Reboot** button, matching the SSH integration.
+- Normalize reboot-button unique IDs and align device name/model metadata with the SSH integration.
+
 This changelog summarizes verified changes from the repository history. Historical entries before 2.1.1 may be incomplete.
 
 ## 2.1.8
