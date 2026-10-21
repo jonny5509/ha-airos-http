@@ -44,20 +44,20 @@ SENSORS = {
     "err_misc": ("Wireless Other Errors", None, None, SensorStateClass.TOTAL_INCREASING),
     "lan_ip_address": ("LAN IP Address", None, None, None),
     "lan_mac_address": ("LAN MAC Address", None, None, None),
-    "lan_plugged": ("LAN Plugged", None, None, None),
+    "lan_plugged": ("LAN Link Status", None, None, None),
     "lan_state": ("LAN State", None, None, None),
     "lan_rxbytes": ("LAN Received Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_rx_bytes": ("LAN RX Bytes", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_rx_bytes": ("LAN Received Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
     "lan_rxpackets": ("LAN Received Packets", None, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_rx_packets": ("LAN RX Packets", None, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_rx_packets": ("LAN Received Packets", None, None, SensorStateClass.TOTAL_INCREASING),
     "lan_rxerrors": ("LAN Receive Errors", None, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_rx_errors": ("LAN RX Errors", None, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_rx_errors": ("LAN Receive Errors", None, None, SensorStateClass.TOTAL_INCREASING),
     "lan_txbytes": ("LAN Transmitted Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_tx_bytes": ("LAN TX Bytes", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_tx_bytes": ("LAN Transmitted Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
     "lan_txpackets": ("LAN Transmitted Packets", None, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_tx_packets": ("LAN TX Packets", None, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_tx_packets": ("LAN Transmitted Packets", None, None, SensorStateClass.TOTAL_INCREASING),
     "lan_txerrors": ("LAN Transmit Errors", None, None, SensorStateClass.TOTAL_INCREASING),
-    "lan_tx_errors": ("LAN TX Errors", None, None, SensorStateClass.TOTAL_INCREASING),
+    "lan_tx_errors": ("LAN Transmit Errors", None, None, SensorStateClass.TOTAL_INCREASING),
     "wlan_rxbytes": ("Wireless Received Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
     "wlan_rxpackets": ("Wireless Received Packets", None, None, SensorStateClass.TOTAL_INCREASING),
     "wlan_rxerrors": ("Wireless Receive Errors", None, None, SensorStateClass.TOTAL_INCREASING),
@@ -82,7 +82,34 @@ SENSORS = {
 
 def _friendly_name(key):
     """Create a readable label for unrecognised scalar fields."""
-    return key.replace("_", " ").replace("-", " ").strip().title()
+    overrides = {
+        "wip": "Wireless IP Address",
+        "wlan_ip_address": "Wireless IP Address",
+        "wmac": "Wireless MAC Address",
+        "lmac": "LAN MAC Address",
+        "lip": "LAN IP Address",
+        "plugged": "LAN Link Status",
+        "rx bytes": "LAN Received Data",
+        "rx errors": "LAN Receive Errors",
+        "rx packets": "LAN Received Packets",
+        "tx bytes": "LAN Transmitted Data",
+        "tx errors": "LAN Transmit Errors",
+        "tx packets": "LAN Transmitted Packets",
+        "ap_mac": "AP MAC",
+        "apmacaddr": "AP MAC",
+        "wlan_apmac": "AP MAC",
+        "cfgcrc": "Cfg CRC",
+        "configcrc": "Cfg CRC",
+        "config_crc": "Cfg CRC",
+        "devicemodel": "Device Model",
+        "model": "Device Model",
+        "linkdistance": "Distance",
+        "dist": "Distance",
+        "lat": "Latitude",
+        "lon": "Longitude",
+        "lng": "Longitude",
+    }
+    return overrides.get(key.strip().lower(), key.replace("_", " ").replace("-", " ").strip().title())
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
