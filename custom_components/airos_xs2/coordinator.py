@@ -163,8 +163,10 @@ def _normalise(data):
     # names, since XS2/XS5 firmware prefixes alone cannot distinguish models.
     identity = " ".join(
         str(value) for key, value in result.items()
-        if key.lower() in {"platform", "board", "board_name", "product", "model",
-                           "deviceid", "device_model", "hardware", "firmwareversion"}
+        if (key.lower() in {"platform", "board", "board_name", "product", "product_name",
+                            "model", "model_name", "deviceid", "device_model", "hardware", "firmwareversion"}
+            or key.lower().endswith(("_platform", "_board", "_board_name", "_product", "_product_name",
+                                     "_model", "_model_name", "_deviceid", "_device_model", "_hardware", "_firmwareversion")))
     )
     compact = re.sub(r"[^a-z0-9]", "", identity.lower())
     model_aliases = (
