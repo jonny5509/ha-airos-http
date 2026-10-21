@@ -200,6 +200,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
     # This deliberately makes discovery broad so users can decide which raw
     # firmware-specific sensors they want to keep or disable later.
     duplicate_aliases = {
+        # Some legacy HTTP payloads expose the same interface values under
+        # short aliases and descriptive keys. Prefer the descriptive sensors.
+        "lip": "lan_ip_address", "lmac": "lan_mac_address",
+        "wmac": "wlanMac", "wip": "wip",
         "side_devicename": "hostname", "devicename": "hostname",
         "date_time": "radio_date_time", "datetime": "radio_date_time",
         "radio_datetime": "radio_date_time",
@@ -208,6 +212,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         "devicemodel": "device_model", "model": "device_model",
         "linkdistance": "distance", "dist": "distance",
         "lat": "latitude", "lon": "longitude", "lng": "longitude",
+        "lanip": "lan_ip_address", "lanmac": "lan_mac_address",
+        "wirelessmac": "wlanMac", "wlan_mac": "wlanMac",
         "ppp_rx_bytes": "ppp_rxbytes", "ppp_rx_packets": "ppp_rxpackets",
         "ppp_rx_errors": "ppp_rxerrors", "ppp_tx_bytes": "ppp_txbytes",
         "ppp_tx_packets": "ppp_txpackets", "ppp_tx_errors": "ppp_txerrors",
