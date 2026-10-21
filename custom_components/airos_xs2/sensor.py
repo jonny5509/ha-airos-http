@@ -230,16 +230,16 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         }
         if key in main_device_keys:
             device_name = entry.data["name"]
-            identifiers = {(DOMAIN, host)}
+            identifiers = {(DOMAIN, device_identifier(host))}
             via_device = False
         elif key in wireless_keys or key in {"wmac", "wip"} or key.lower().startswith(("wlan_", "wireless_")):
-            device_id = f"{host}_wireless"
+            device_id = f"{device_identifier(host)}_wireless"
             device_name = f"{entry.data['name']} Wireless"
             identifiers = {(DOMAIN, device_id)}
             via_device = True
         elif key in {"lmac", "lip", "lan_state"} or key.lower().startswith("lan_"):
             # LAN interface sensors belong to their own child device under the radio.
-            device_id = f"{host}_lan"
+            device_id = f"{device_identifier(host)}_lan"
             device_name = f"{entry.data['name']} LAN"
             identifiers = {(DOMAIN, device_id)}
             via_device = True
