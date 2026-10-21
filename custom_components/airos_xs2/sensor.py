@@ -111,7 +111,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         model="Original airOS 3.x–4.x LAN",
         name=f"{entry.data['name']} LAN",
         configuration_url=coordinator.host.rstrip("/"),
-        via_device_id=parent_device.id,
+        via_device=(DOMAIN, host),
     )
     # The initial HTTP response may not expose hardware identity. Update the
     # Home Assistant device once a later poll discovers the model.
@@ -234,7 +234,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         self._entry_id = entry.entry_id
         self._attr_device_info = DeviceInfo(
             identifiers=identifiers,
-            via_device_id=via_device_id,
+            via_device=(DOMAIN, host) if via_device else None,
             manufacturer="Ubiquiti",
             model=((coordinator.data or {}).get("device_model") or "Original airOS 3.x–4.x") if not via_device else (((coordinator.data or {}).get("device_model") or "Original airOS 3.x–4.x") + (" LAN" if key in {"lmac", "lip", "lan_state"} or key.lower().startswith("lan_") else " Wireless")),
             name=device_name,
@@ -263,7 +263,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             model=((self.coordinator.data or {}).get("device_model") or "Original airOS 3.x–4.x") + (" LAN" if is_lan_sensor else " Wireless"),
             name=self._target_device_name,
             configuration_url=self.coordinator.host.rstrip("/"),
-            via_device_id=self._target_via_device_id,
+            via_device=(DOMAIN, host),
         )
         entity_entry = entity_registry.async_get(self.entity_id)
         if entity_entry is not None and entity_entry.device_id != device.id:

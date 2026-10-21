@@ -2,7 +2,7 @@
 
 [![Downloads](https://img.shields.io/github/downloads/jonny5509/ha-airos-http/total?label=downloads)](https://github.com/jonny5509/ha-airos-http/releases)
 
-**Version:** 2.2.0  
+**Version:** 2.2.3  
 **Transport:** HTTP  
 **Repository:** https://github.com/jonny5509/ha-airos-http
 
