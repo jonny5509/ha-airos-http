@@ -164,7 +164,7 @@ def _normalise(data):
     identity = " ".join(
         str(value) for key, value in result.items()
         if key.lower() in {"platform", "board", "board_name", "product", "model",
-                           "deviceid", "device_model", "hardware"}
+                           "deviceid", "device_model", "hardware", "firmwareversion"}
     )
     compact = re.sub(r"[^a-z0-9]", "", identity.lower())
     # Support only original NanoStation 2/5 identifiers; don't infer other families.
