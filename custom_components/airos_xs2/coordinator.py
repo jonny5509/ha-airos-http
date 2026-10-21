@@ -72,6 +72,9 @@ def _parse_status(body):
 def _normalise(data):
     """Map common airOS status key spellings to the integration's sensor keys."""
     aliases = {
+        # The installed firmware is reported under different names across
+        # legacy airOS builds. Expose the live value as firmwareVersion.
+        "firmwareVersion": ("firmwareVersion", "firmware_version", "fwversion", "firmware", "version"),
         "signal": ("signal", "wlan_signal", "wireless_signal", "signal_strength"),
         "noise": ("noise", "noisef", "wlan_noise", "wireless_noise"),
         "ccq": ("ccq", "wlan_ccq", "tx_ccq"),
@@ -126,6 +129,8 @@ def _normalise(data):
     # the same value under multiple spellings; leaving the raw aliases in
     # result makes the sensor platform create duplicate entities for one value.
     duplicate_aliases = {
+        "firmware_version": "firmwareVersion", "fwversion": "firmwareVersion",
+        "firmware": "firmwareVersion", "version": "firmwareVersion",
         "wlan_signal": "signal", "wireless_signal": "signal", "signal_strength": "signal",
         "noisef": "noise", "wlan_noise": "noise", "wireless_noise": "noise",
         "wlan_tx_rate": "wlanTxRate", "tx_rate": "wlanTxRate",
