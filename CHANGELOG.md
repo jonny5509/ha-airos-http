@@ -2,7 +2,7 @@
 
 This changelog summarizes verified changes from the repository history. Historical entries before 2.1.1 may be incomplete.
 
-## Unreleased
+## 2.3.0
 
 - Remove the `hub` integration-type classification so Home Assistant uses the standard integration entry wording.
 - Fix duplicate HTTP interface sensors and continue deduplicating legacy sensor aliases.
