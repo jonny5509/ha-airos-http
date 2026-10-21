@@ -71,9 +71,9 @@ SENSORS = {
     "ppp_txbytes": ("PPP Transmitted Data", UnitOfInformation.BYTES, None, SensorStateClass.TOTAL_INCREASING),
     "ppp_txpackets": ("PPP Transmitted Packets", None, None, SensorStateClass.TOTAL_INCREASING),
     "ppp_txerrors": ("PPP Transmit Errors", None, None, SensorStateClass.TOTAL_INCREASING),
-    "apmac": ("AP MAC", None, None, None), "cfg_crc": ("Cfg CRC", None, None, None),
+    "apmac": ("AP MAC", None, None, None), "cfg_crc": ("Config CRC", None, None, None),
     "device_model": ("Device Model", None, None, None), "distance": ("Distance", None, None, None),
-    "ack_timeout": ("Ack Timeout", None, None, None), "latitude": ("Latitude", None, None, None),
+    "ack_timeout": ("ACK Timeout", None, None, None), "latitude": ("Latitude", None, None, None),
     "longitude": ("Longitude", None, None, None), "radio_date_time": ("Radio Date and Time", None, None, None),
     "deviceId": ("Device ID", None, None, None), "firmwareVersion": ("Firmware Version", None, None, None),
     "platform": ("Platform", None, None, None), "deviceIp": ("Configured Device IP Address", None, None, None),
@@ -166,8 +166,33 @@ async def async_setup_entry(hass, entry, async_add_entities):
         if not any(e.device_id == old_device.id for e in entity_registry.entities.values()):
             device_registry.async_remove_device(old_device.id)
 
-    # First add known sensors with units and device classes.
+    # Prefer one canonical entity when old firmware reports the same counter
+    # under both underscored and compact aliases. Keep the existing unique IDs
+    # of the preferred entities so history and automations remain intact.
+    sensor_aliases = {
+        "lan_rx_bytes": "lan_rxbytes",
+        "lan_rx_packets": "lan_rxpackets",
+        "lan_rx_errors": "lan_rxerrors",
+        "lan_tx_bytes": "lan_txbytes",
+        "lan_tx_packets": "lan_txpackets",
+        "lan_tx_errors": "lan_txerrors",
+        "ppp_rx_bytes": "ppp_rxbytes",
+        "ppp_rx_packets": "ppp_rxpackets",
+        "ppp_rx_errors": "ppp_rxerrors",
+        "ppp_tx_bytes": "ppp_txbytes",
+        "ppp_tx_packets": "ppp_txpackets",
+        "ppp_tx_errors": "ppp_txerrors",
+        "wlan_rx_bytes": "wlan_rxbytes",
+        "wlan_rx_packets": "wlan_rxpackets",
+        "wlan_rx_errors": "wlan_rxerrors",
+        "wlan_tx_bytes": "wlan_txbytes",
+        "wlan_tx_packets": "wlan_txpackets",
+        "wlan_tx_errors": "wlan_txerrors",
+    }
     for key, description in SENSORS.items():
+        canonical_key = sensor_aliases.get(key)
+        if canonical_key and data.get(canonical_key) not in (None, ""):
+            continue
         if key in data and data[key] is not None:
             entities.append(AirOSSensor(coordinator, entry, key, parent_device.id, *description))
 
@@ -208,6 +233,41 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator, entry, key, parent_device_id, label, unit, device_class, state_class):
         super().__init__(coordinator)
         self.key = key
+        self._attr_icon = {
+            "signal": "mdi:signal",
+            "noise": "mdi:waveform",
+            "ccq": "mdi:chart-line",
+            "snr": "mdi:signal",
+            "wlanTxRate": "mdi:upload",
+            "wlanRxRate": "mdi:download",
+            "frequency": "mdi:sine-wave",
+            "essid": "mdi:wifi",
+            "wlanMac": "mdi:network-outline",
+            "mac": "mdi:lan",
+            "hostname": "mdi:form-textbox",
+            "ip_address": "mdi:ip-network",
+            "uptime_seconds": "mdi:timer-outline",
+            "cpu_usage": "mdi:cpu-64-bit",
+            "ram_usage_percent": "mdi:memory",
+            "firmware_upgrade": "mdi:chip",
+            "ethernet_rx_bytes": "mdi:download-network",
+            "ethernet_tx_bytes": "mdi:upload-network",
+            "wireless_rx_bytes": "mdi:download-network",
+            "wireless_tx_bytes": "mdi:upload-network",
+            "lan_rxbytes": "mdi:download-network",
+            "lan_txbytes": "mdi:upload-network",
+            "wlan_rxbytes": "mdi:download-network",
+            "wlan_txbytes": "mdi:upload-network",
+            "ppp_rxbytes": "mdi:download-network",
+            "ppp_txbytes": "mdi:upload-network",
+            "device_model": "mdi:router-wireless",
+            "deviceId": "mdi:identifier",
+            "firmwareVersion": "mdi:package-variant",
+            "distance": "mdi:map-marker-distance",
+            "latitude": "mdi:latitude",
+            "longitude": "mdi:longitude",
+            "radio_date_time": "mdi:clock-outline",
+        }.get(key)
         self._attr_name = label
         self._attr_unique_id = f"{entry.data['host']}_{key}"
         self._attr_native_unit_of_measurement = unit
