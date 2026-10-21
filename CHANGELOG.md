@@ -2,6 +2,14 @@
 
 This changelog summarizes verified changes from the repository history. Historical entries before 2.1.1 may be incomplete.
 
+## 2.3.0
+
+- Remove the `hub` integration-type classification so Home Assistant uses the standard integration entry wording.
+- Fix duplicate HTTP interface sensors and continue deduplicating legacy sensor aliases.
+- Clean up sensor entity names and icons for more consistent presentation.
+- Align legacy device-model detection with the SSH integration, including additional identity-field variants.
+- Normalize device identifiers to improve consistency across supported AirOS responses.
+
 ## 2.1.8
 
 - Improve setup form wording and field descriptions for the device name, host, and HTTP web-interface credentials.
