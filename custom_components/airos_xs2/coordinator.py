@@ -158,24 +158,34 @@ def _normalise(data):
         if alias_key is not None and alias_key != canonical and result.get(canonical) not in (None, ""):
             result.pop(alias_key, None)
 
-    # Legacy airOS 3.x-4.x devices may expose the product only in a model,
-    # platform, board or product field. Normalize known retail aliases while
-    # preserving unknown hardware identifiers as reported by the device.
+    # Legacy airOS 3.x-4.x devices may expose product identity through
+    # platform, board, product, or firmware fields. Prefer explicit product
+    # names, since XS2/XS5 firmware prefixes alone cannot distinguish models.
     identity = " ".join(
         str(value) for key, value in result.items()
         if key.lower() in {"platform", "board", "board_name", "product", "model",
                            "deviceid", "device_model", "hardware", "firmwareversion"}
     )
     compact = re.sub(r"[^a-z0-9]", "", identity.lower())
-    # Support only original NanoStation 2/5 identifiers; don't infer other families.
     model_aliases = (
-        ("nanostation2", "NanoStation 2"), ("ns2", "NanoStation 2"), ("xs2", "NanoStation 2"),
-        ("nanostation5", "NanoStation 5"), ("ns5", "NanoStation 5"), ("xs5", "NanoStation 5"),
+        ("nanostationloco2", "NanoStation Loco2"), ("nanostationloco5", "NanoStation Loco5"),
+        ("loco2", "NanoStation Loco2"), ("loco5", "NanoStation Loco5"),
+        ("picostation2", "PicoStation 2"), ("picostation5", "PicoStation 5"),
+        ("powerstation2", "PowerStation 2"), ("powerstation5", "PowerStation 5"),
+        ("bullet2", "Bullet2"), ("bullet5", "Bullet5"),
+        ("nanostation2", "NanoStation 2"), ("nanostation5", "NanoStation 5"),
+        ("ns2", "NanoStation 2"), ("ns5", "NanoStation 5"),
     )
     for alias, label in model_aliases:
         if alias in compact:
             result["device_model"] = label
             break
+    else:
+        firmware = str(result.get("firmwareVersion") or "")
+        if firmware.upper().startswith("XS2") or re.search(r"(?i)\\b(?:NS2|XS2)\\b", identity):
+            result["device_model"] = "NanoStation 2"
+        elif firmware.upper().startswith("XS5") or re.search(r"(?i)\\b(?:NS5|XS5)\\b", identity):
+            result["device_model"] = "NanoStation 5"
 
     def number(key):
         try:
