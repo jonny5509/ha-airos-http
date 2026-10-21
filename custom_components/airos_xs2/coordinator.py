@@ -182,9 +182,9 @@ def _normalise(data):
             break
     else:
         firmware = str(result.get("firmwareVersion") or "")
-        if firmware.upper().startswith("XS2") or re.search(r"(?i)\\b(?:NS2|XS2)\\b", identity):
+        if firmware.upper().startswith("XS2") or "ns2" in compact or "xs2" in compact:
             result["device_model"] = "NanoStation 2"
-        elif firmware.upper().startswith("XS5") or re.search(r"(?i)\\b(?:NS5|XS5)\\b", identity):
+        elif firmware.upper().startswith("XS5") or "ns5" in compact or "xs5" in compact:
             result["device_model"] = "NanoStation 5"
 
     def number(key):
