@@ -3,7 +3,7 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DOMAIN, device_identifier
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -20,12 +20,12 @@ class AirOSRebootButton(CoordinatorEntity, ButtonEntity):
 
     def __init__(self, coordinator, entry):
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.data['host']}_reboot"
+        self._attr_unique_id = f"{device_identifier(entry.data['host'])}_reboot"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.data["host"])},
+            identifiers={(DOMAIN, device_identifier(entry.data["host"]))},
             manufacturer="Ubiquiti",
-            model="Original NanoStation 2/5 (airOS 3.x–4.x)",
-            name=entry.data["name"],
+            model=(coordinator.data or {}).get("device_model") or "Original airOS 3.x–4.x",
+            name=entry.data["name"].split(",", 1)[0].strip() or "AirOS Device",
             configuration_url=coordinator.host.rstrip("/"),
         )
         self._coordinator = coordinator

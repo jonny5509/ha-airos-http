@@ -9,7 +9,7 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DOMAIN, device_identifier
 
 # Key -> (friendly name, unit, device class, state class).
 # Include fields actually returned by airOS 4.0.4's status.cgi. Optional fields
@@ -94,7 +94,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     device_registry = dr.async_get(hass)
     parent_device = device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
-        identifiers={(DOMAIN, entry.data["host"])},
+        identifiers={(DOMAIN, device_identifier(entry.data["host"]))},
         manufacturer="Ubiquiti",
         model=(data.get("device_model") or "Original airOS 3.x–4.x"),
         name=entry.data["name"],
@@ -106,19 +106,19 @@ async def async_setup_entry(hass, entry, async_add_entities):
     host = entry.data["host"]
     lan_device = device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
-        identifiers={(DOMAIN, f"{host}_lan")},
+        identifiers={(DOMAIN, f"{device_identifier(host)}_lan")},
         manufacturer="Ubiquiti",
         model="Original airOS 3.x–4.x LAN",
         name=f"{entry.data['name']} LAN",
         configuration_url=coordinator.host.rstrip("/"),
-        via_device=(DOMAIN, host),
+        via_device=(DOMAIN, device_identifier(host)),
     )
     # The initial HTTP response may not expose hardware identity. Update the
     # Home Assistant device once a later poll discovers the model.
     def _update_registered_device_model():
         detected_model = (coordinator.data or {}).get("device_model")
         current_device = device_registry.async_get_device(
-            identifiers={(DOMAIN, entry.data["host"])}
+            identifiers={(DOMAIN, device_identifier(entry.data["host"]))}
         )
         if current_device and detected_model and current_device.model != detected_model:
             device_registry.async_update_device(current_device.id, model=detected_model)
@@ -234,7 +234,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         self._entry_id = entry.entry_id
         self._attr_device_info = DeviceInfo(
             identifiers=identifiers,
-            via_device=(DOMAIN, host) if via_device else None,
+            via_device=(DOMAIN, device_identifier(host)) if via_device else None,
             manufacturer="Ubiquiti",
             model=((coordinator.data or {}).get("device_model") or "Original airOS 3.x–4.x") if not via_device else (((coordinator.data or {}).get("device_model") or "Original airOS 3.x–4.x") + (" LAN" if key in {"lmac", "lip", "lan_state"} or key.lower().startswith("lan_") else " Wireless")),
             name=device_name,
@@ -263,7 +263,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             model=((self.coordinator.data or {}).get("device_model") or "Original airOS 3.x–4.x") + (" LAN" if is_lan_sensor else " Wireless"),
             name=self._target_device_name,
             configuration_url=self.coordinator.host.rstrip("/"),
-            via_device=(DOMAIN, host),
+            via_device=(DOMAIN, device_identifier(host)),
         )
         entity_entry = entity_registry.async_get(self.entity_id)
         if entity_entry is not None and entity_entry.device_id != device.id:
@@ -275,7 +275,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
         # Existing LAN entities may still be assigned to the old Ethernet child.
         # Move them to the new LAN child, then remove the obsolete device if empty.
         legacy_device = device_registry.async_get_device(
-            identifiers={(DOMAIN, f"{host}_ethernet")}
+            identifiers={(DOMAIN, f"{device_identifier(host)}_ethernet")}
         )
         if legacy_device is None:
             return
