@@ -158,16 +158,22 @@ def _normalise(data):
         if alias_key is not None and alias_key != canonical and result.get(canonical) not in (None, ""):
             result.pop(alias_key, None)
 
-    # Legacy airOS 3.x-4.x devices may expose product identity through
-    # platform, board, product, or firmware fields. Prefer explicit product
-    # names, since XS2/XS5 firmware prefixes alone cannot distinguish models.
-    identity = " ".join(
-        str(value) for key, value in result.items()
-        if (key.lower() in {"platform", "board", "board_name", "product", "product_name",
-                            "model", "model_name", "deviceid", "device_model", "hardware", "firmwareversion"}
-            or key.lower().endswith(("_platform", "_board", "_board_name", "_product", "_product_name",
-                                     "_model", "_model_name", "_deviceid", "_device_model", "_hardware", "_firmwareversion")))
-    )
+    # Match the SSH integration's broader identity-field handling. Legacy
+    # status.cgi responses vary in spelling and may flatten nested fields into
+    # names such as system_boardName or wireless_deviceModel.
+    identity_keys = {
+        "platform", "deviceid", "board", "boardname", "product", "productname",
+        "model", "modelname", "devicemodel", "hardware", "firmwareversion",
+    }
+    identity_values = []
+    for key, value in result.items():
+        normalised_key = re.sub(r"[^a-z0-9]", "", str(key).lower())
+        if (
+            normalised_key in identity_keys
+            or any(normalised_key.endswith(suffix) for suffix in identity_keys)
+        ):
+            identity_values.append(str(value))
+    identity = " ".join(identity_values)
     compact = re.sub(r"[^a-z0-9]", "", identity.lower())
     model_aliases = (
         ("nanostationloco2", "NanoStation Loco2"), ("nanostationloco5", "NanoStation Loco5"),
