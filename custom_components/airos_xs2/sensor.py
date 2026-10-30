@@ -356,7 +356,7 @@ class AirOSSensor(CoordinatorEntity, SensorEntity):
             model=((self.coordinator.data or {}).get("device_model") or "Original airOS 3.x–4.x") + (" LAN" if is_lan_sensor else " Wireless"),
             name=self._target_device_name,
             configuration_url=self.coordinator.host.rstrip("/"),
-            via_device=(DOMAIN, device_identifier(host)),
+            via_device_id=self._target_via_device_id,
         )
         entity_entry = entity_registry.async_get(self.entity_id)
         if entity_entry is not None and entity_entry.device_id != device.id:
