@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.1
+
+- Replace deprecated Home Assistant device-registry APIs to maintain compatibility with upcoming Home Assistant releases.
+- Preserve device relationships and existing entity assignments during device migration.
+
+
 This changelog summarizes verified changes from the repository history. Historical entries before 2.1.1 may be incomplete.
 
 ## 2.3.0
