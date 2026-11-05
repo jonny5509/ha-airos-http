@@ -2,7 +2,7 @@
 import pytest
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
-from custom_components.airos_xs2.coordinator import _flatten, _normalise, _parse_status
+from custom_components.airos_xs2_http.coordinator import _flatten, _normalise, _parse_status
 
 
 def test_parse_status_json_object():
