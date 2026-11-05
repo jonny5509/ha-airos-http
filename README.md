@@ -2,7 +2,7 @@
 
 [![Downloads](https://img.shields.io/github/downloads/jonny5509/ha-airos-http/total?label=downloads)](https://github.com/jonny5509/ha-airos-http/releases)
 
-**Version:** 2.3.1  
+**Version:** 2.3.2  
 **Transport:** HTTP  
 **Repository:** https://github.com/jonny5509/ha-airos-http
 
@@ -29,6 +29,10 @@ Available sensors depend on the radio model, firmware, and fields exposed by its
 
 The HTTP interface may expose fewer diagnostics than the SSH edition, including limited CPU, memory, or interface-counter data.
 
+## Domain and upgrade note
+
+This HTTP edition uses the unique Home Assistant domain `airos_xs2_http`, so it can coexist with the SSH edition (`airos_xs2_ssh`) and the combined AirOS integration (`airos_xs2`). If upgrading from the former shared `airos_xs2` domain, remove the old integration entry and old `custom_components/airos_xs2` folder before installing this edition. Home Assistant does not automatically migrate config entries across domains; add this HTTP integration again after installation.
+
 ## Installation
 
 ### HACS
@@ -43,7 +47,7 @@ Use this canonical repository URL if you previously added an older repository ad
 ### Manual
 
 1. Download or clone this repository.
-2. Copy `custom_components/airos_xs2` into your Home Assistant `config/custom_components/` directory.
+2. Copy `custom_components/airos_xs2_http` into your Home Assistant `config/custom_components/` directory.
 3. Restart Home Assistant.
 4. Add **Ubiquiti AirOS (HTTP)** from **Settings → Devices & services → Add integration**.
 5. Enter the radio's IP address and web-interface credentials.

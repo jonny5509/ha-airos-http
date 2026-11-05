@@ -2,8 +2,8 @@
 
 Home Assistant custom integration for monitoring legacy Ubiquiti airOS 4.x radios through the device's local web interface.
 
-- **Domain:** `airos_xs2`
-- **Current integration version:** `2.1.7`
+- **Domain:** `airos_xs2_http`
+- **Current integration version:** `2.3.2`
 - **Target firmware used for comparison:** `XS5.ar2313.v4.0.4.5074.150724.1344`
 - **Communication:** Local HTTP polling; credentials and status traffic are not encrypted
 - **Documentation:** https://github.com/jonny5509/ha-airos-http

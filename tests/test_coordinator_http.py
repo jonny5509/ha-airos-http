@@ -6,7 +6,7 @@ import aiohttp
 import pytest
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
-from custom_components.airos_xs2.coordinator import AiRXS2Coordinator
+from custom_components.airos_xs2_http.coordinator import AiRXS2Coordinator
 
 
 def coordinator_for_test():
@@ -82,7 +82,7 @@ async def test_reboot_tolerates_connection_drop_during_restart():
 
 @pytest.mark.asyncio
 async def test_setup_closes_session_when_first_refresh_fails(monkeypatch):
-    import custom_components.airos_xs2 as integration
+    import custom_components.airos_xs2_http as integration
 
     coordinator = SimpleNamespace(
         async_config_entry_first_refresh=AsyncMock(side_effect=UpdateFailed("login failed")),
@@ -100,4 +100,4 @@ async def test_setup_closes_session_when_first_refresh_fails(monkeypatch):
         await integration.async_setup_entry(hass, entry)
 
     coordinator.async_close.assert_awaited_once_with()
-    assert "airos_xs2" not in hass.data
+    assert "airos_xs2_http" not in hass.data

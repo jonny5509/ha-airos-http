@@ -1,4 +1,4 @@
-DOMAIN = "airos_xs2"
+DOMAIN = "airos_xs2_http"
 DEFAULT_SCAN_INTERVAL = 60
 
 
