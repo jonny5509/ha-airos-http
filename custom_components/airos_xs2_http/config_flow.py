@@ -3,6 +3,16 @@ from homeassistant import config_entries
 from .const import DOMAIN
 
 
+def _device_schema(data=None):
+    data = data or {}
+    return vol.Schema({
+        vol.Required("name", default=data.get("name", "NanoStation5")): str,
+        vol.Required("host", default=data.get("host", "http://192.168.1.20")): str,
+        vol.Required("username", default=data.get("username", "")): str,
+        vol.Required("password", default=data.get("password", "")): str,
+    })
+
+
 class AiRXS2ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
@@ -19,10 +29,22 @@ class AiRXS2ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema({
-                vol.Required("name", default="NanoStation5"): str,
-                vol.Required("host", description={"suggested_value": "http://192.168.1.20"}): str,
-                vol.Required("username"): str,
-                vol.Required("password"): str,
-            }),
+            data_schema=_device_schema(),
+        )
+
+    async def async_step_reconfigure(self, user_input=None):
+        entry = self._get_reconfigure_entry()
+        if user_input is not None:
+            host = user_input["host"].strip().rstrip("/")
+            host = host.removeprefix("https://").removeprefix("http://").strip("/")
+            data = {**user_input, "host": "http://" + host}
+            self.hass.config_entries.async_update_entry(
+                entry, data=data, title=data["name"]
+            )
+            await self.hass.config_entries.async_reload(entry.entry_id)
+            return self.async_abort(reason="reconfigure_successful")
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=_device_schema(entry.data),
         )
