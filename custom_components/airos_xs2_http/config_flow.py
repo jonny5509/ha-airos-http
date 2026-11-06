@@ -51,4 +51,3 @@ class AiRXS2ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="reconfigure",
             data_schema=_device_schema(entry.data),
         )
-}
