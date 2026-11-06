@@ -14,10 +14,12 @@ def test_manifest_matches_integration_domain():
         assert key in manifest
 
 
-def test_hacs_metadata():
+def test_marketplace_metadata():
     hacs = json.loads((ROOT / "hacs.json").read_text())
     assert hacs["name"]
-    assert hacs["render_readme"] is True
+    # Marketplace renders the repository README itself; render_readme was
+    # a legacy HACS setting and is intentionally no longer required.
+    assert "render_readme" not in hacs
 
 
 def test_config_flow_translation_exists():
