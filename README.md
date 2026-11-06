@@ -6,7 +6,7 @@
 **Transport:** HTTP  
 **Repository:** https://github.com/jonny5509/ha-airos-http
 
-A Home Assistant custom integration for monitoring the original Ubiquiti NanoStation 2 (NS2/XS2) and NanoStation 5 (NS5/XS5) running legacy airOS 3.x–4.x. This edition uses the radio's web interface over plain HTTP; it does not use SSH or HTTPS.
+A Home Assistant custom integration for monitoring legacy Ubiquiti airOS radios. This edition uses the radio's web interface over plain HTTP; it does not use SSH or HTTPS.
 
 ## Features
 
@@ -20,12 +20,11 @@ Available sensors depend on the radio model, firmware, and fields exposed by its
 
 ## Compatibility
 
-- Intended specifically for the original NanoStation 2 (NS2/XS2) and NanoStation 5 (NS5/XS5) with airOS 3.x–4.x.
-- Other product families, including NanoStation Loco, Bullet, PicoStation, and PowerStation, are outside the supported scope.
-- Target firmware used for comparison: `XS5.ar2313.v4.0.4.5074.150724.1344`.
-- The integration logs in through `/login.cgi` and polls `/status.cgi`.
-- Automated tests cover JSON status payloads and common JavaScript assignment formats, including alternate key spellings and NS2/NS5 identity aliases.
-- Firmware-specific fields vary; parser-format tests do not mean every airOS 3.x/4.x build has been verified on physical hardware.
+Officially supported hardware is limited to the original Ubiquiti NanoStation 2 (NS2/XS2) and NanoStation 5 (NS5/XS5), running legacy airOS 3.x–4.x.
+
+NanoStation Loco, Bullet, PicoStation, PowerStation, and other product families are **not officially supported**. Device identification or parsing of similar status fields does not establish compatibility.
+
+The integration logs in through `/login.cgi` and polls `/status.cgi`. Automated tests cover JSON status payloads and common JavaScript assignment formats, including alternate key spellings and NS2/NS5 identity aliases. These parser tests do not mean every airOS 3.x/4.x build has been verified on physical hardware.
 
 The HTTP interface may expose fewer diagnostics than the SSH edition, including limited CPU, memory, or interface-counter data.
 
